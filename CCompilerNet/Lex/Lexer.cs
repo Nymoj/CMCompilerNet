@@ -120,6 +120,33 @@ namespace CCompilerNet.Lex
             return true;
         }
 
+        private bool IsStringLiteral()
+        {
+            int originalPos = _pos;
+
+            if (!IsMatch('\"'))
+            {
+                return false;
+            }
+
+            _pos++;
+
+            while (!IsEndLine())
+            {
+                if (IsMatch('\"'))
+                {
+                    _pos++;
+                    return true;
+                }
+
+                _pos++;
+            }
+
+            _pos = originalPos;
+
+            return false;
+        }
+
         private bool IsLetterOrDigit(char symbol)
         {
             return char.IsDigit(symbol) || char.IsLetter(symbol);
