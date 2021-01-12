@@ -26,12 +26,103 @@ namespace CCompilerNet.Lex
 
         public Token GetNextToken()
         {
-            return null;
+            Token token = null;
+            int startPos = _pos;
+
+            if (IsConstant())
+            {
+                token = new Token(TokenType.Const, CutTokenFromLine(_pos));
+            }
+
+            return token;
         }
 
         public Token Peek()
         {
             return null;
+        }
+
+        private string CutTokenFromLine(int start)
+        {
+            return _line.Substring(start, _pos - start);
+        }
+
+        private bool IsConstant()
+        {
+            return IsNumConst() || IsCharConst();
+        }
+
+        private bool IsNumConst()
+        {
+            // DIGIT++
+
+            int originalPos = _pos;
+
+            if (!char.IsDigit(_line[_pos]))
+            {
+                return false;
+            }
+
+            while (char.IsDigit(_line[_pos]))
+            {
+                _pos++;
+            }
+
+            if (!IsMatch('.'))
+            {
+                return true;
+            }
+
+            _pos++;
+
+            if (!char.IsDigit(_line[_pos]))
+            {
+                _pos = originalPos;
+                return false;
+            }
+
+            while (char.IsDigit(_line[_pos]))
+            {
+                _pos++;
+            }
+
+            return true;
+        }
+
+        private bool IsCharConst()
+        {
+            // LETTER+
+            int originalPos = _pos;
+
+            if (!IsMatch('\''))
+            {
+                return false;
+            }
+
+            _pos++;
+
+            if (!IsLetterOrDigit(_line[_pos]))
+            {
+                _pos = originalPos;
+                return false;
+            }
+
+            _pos++;
+
+            if (!IsMatch('\''))
+            {
+                _pos = originalPos;
+                return false;
+            }
+
+            _pos++;
+
+            return true;
+        }
+
+        private bool IsLetterOrDigit(char symbol)
+        {
+            return char.IsDigit(symbol) || char.IsLetter(symbol);
         }
 
         private bool IsEndLine()
