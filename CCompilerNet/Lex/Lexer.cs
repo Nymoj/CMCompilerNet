@@ -147,6 +147,43 @@ namespace CCompilerNet.Lex
             return false;
         }
 
+        private bool IsOperator()
+        {
+            string op = "";
+            op += _line[_pos];
+
+            string[] operators = {
+                // arithmetic operators
+                "+", "-", "*", "/", "%", "++", "--",
+		        // relational operators
+		        "==", "!=", ">", "<", ">=", "<=",
+		        // logical operators
+		        "&&", "||", "!",
+		        // bitwise operators
+		        "&", "|", "^", "<<", ">>",
+		        // assigment operators
+		        "=", "+=", "-=", "*=", "/=", "%=",
+		        // conditional operator
+		        "?",
+	        };
+
+            if (!operators.Contains(op))
+            {
+                return false;
+            }
+
+            op += _line[++_pos];
+
+            // if operator with 2 symbols is valid, increase _pos to point to the beggining of next token
+            // if not, the operator is one symbol length, and _pos is already increased in previous line
+            if (operators.Contains(op))
+            {
+                _pos++;
+            }
+
+            return true;
+        }
+
         private bool IsLetterOrDigit(char symbol)
         {
             return char.IsDigit(symbol) || char.IsLetter(symbol);
