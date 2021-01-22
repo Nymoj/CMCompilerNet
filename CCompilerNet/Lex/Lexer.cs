@@ -27,11 +27,63 @@ namespace CCompilerNet.Lex
         public Token GetNextToken()
         {
             Token token = null;
-            int startPos = _pos;
+            int startPos = 0;
 
-            if (IsConstant())
+            // Skip white spaces before next token
+            SkipWhiteSpace();
+
+            // Check to see if file is empty or end of file reached
+            if (IsEndLine() && !GetNextLine())
             {
-                token = new Token(TokenType.Const, CutTokenFromLine(_pos));
+                return null;
+            }
+
+            // skip all blank and comment lines
+            while (_line.Length == 0 || IsComment() || _commentMode)
+            {
+                if (!GetNextLine())
+                {
+                    return null;
+                }
+            }
+
+            // Check after possibly skipping lines in comment mode is end of file reached
+            if (IsEndLine() && !GetNextLine())
+            {
+                return null;
+            }
+
+            // initializing with updated _pos
+            startPos = _pos;
+
+            if (IsKeyword())
+            {
+                token = new Token(TokenType.Keyword, CutTokenFromLine(startPos));
+            }
+            else if (IsId())
+            {
+                token = new Token(TokenType.ID, CutTokenFromLine(startPos));
+            }
+            else if (IsConstant())
+            {
+                token = new Token(TokenType.Const, CutTokenFromLine(startPos));
+            }
+            else if (IsStringLiteral())
+            {
+                token = new Token(TokenType.StringLiteral, CutTokenFromLine(startPos));
+            }
+            else if (IsSpecialSymbol())
+            {
+                token = new Token(TokenType.SpecialSymbol, CutTokenFromLine(startPos));
+            }
+            else if (IsOperator())
+            {
+                token = new Token(TokenType.Operator, CutTokenFromLine(startPos));
+            }
+            else
+            {
+                token = new Token(TokenType.BadToken, CutTokenFromLine(startPos));
+                _pos++;
             }
 
             return token;
@@ -39,7 +91,17 @@ namespace CCompilerNet.Lex
 
         public Token Peek()
         {
-            return null;
+            int originalPos = _pos;
+            string originalLine = _line;
+
+            Token token = GetNextToken();
+
+            // Check if the line was updated
+            // If not, set _pos to its original state
+            // If yes, set _pos to the start of the line
+            _pos = _line != originalLine ? 0 : originalPos;
+
+            return token;
         }
 
         private string CutTokenFromLine(int start)
@@ -58,12 +120,12 @@ namespace CCompilerNet.Lex
 
             int originalPos = _pos;
 
-            if (!char.IsDigit(_line[_pos]))
+            if (!IsDigit())
             {
                 return false;
             }
 
-            while (char.IsDigit(_line[_pos]))
+            while (IsDigit())
             {
                 _pos++;
             }
@@ -75,18 +137,23 @@ namespace CCompilerNet.Lex
 
             _pos++;
 
-            if (!char.IsDigit(_line[_pos]))
+            if (!IsDigit())
             {
                 _pos = originalPos;
                 return false;
             }
 
-            while (char.IsDigit(_line[_pos]))
+            while (IsDigit())
             {
                 _pos++;
             }
 
             return true;
+        }
+
+        private bool IsDigit()
+        {
+            return !IsEndLine() && char.IsDigit(_line[_pos]);
         }
 
         private bool IsCharConst()
@@ -186,17 +253,17 @@ namespace CCompilerNet.Lex
 
         private bool IsLetterOrDigit(char symbol)
         {
-            return char.IsDigit(symbol) || char.IsLetter(symbol);
+            return char.IsDigit(symbol) || IsLetter();
         }
 
         private bool IsEndLine()
         {
-            return _pos >= _line.Length;
+            return _stream.EndOfStream || _pos >= _line.Length;
         }
 
         private bool IsMatch(char symbol)
         {
-            return _line[_pos] == symbol;
+            return !IsEndLine() && _line[_pos] == symbol;
         }
 
         private bool IsKeyword()
@@ -206,26 +273,25 @@ namespace CCompilerNet.Lex
             // language keywords
 
             List<string> keywords = new List<string>{
-                    "auto", "break", "case", "char",
-		    "const", "continue", "default", "do",
-		    "double", "else", "enum", "extern",
-		    "float", "for", "goto", "if",
-		    "int", "long", "register", "return",
-		    "short", "signed", "sizeof", "static",
-		    "struct", "switch", "typedef", "union",
-		    "unsigned", "void", "volatile", "while"
-
+                "auto", "break", "case", "char",
+		        "const", "continue", "default", "do",
+		        "double", "else", "enum", "extern",
+		        "float", "for", "goto", "if",
+		        "int", "long", "register", "return",
+		        "short", "signed", "sizeof", "static",
+		        "struct", "switch", "typedef", "union",
+		        "unsigned", "void", "volatile", "while"
             };
 
             string result = "";
             int originalPos = _pos;
 
-            if ( !char.IsLetter( _line[_pos] ) )
+            if (!IsLetter())
             {
                 return false;
             }
 
-            while ( char.IsLetter( _line[_pos] ) )
+            while (IsLetter())
             {
                 result += _line[_pos++];
             }
@@ -244,25 +310,33 @@ namespace CCompilerNet.Lex
             }
         }
 
+        private bool IsLetter()
+        {
+            return !IsEndLine() && (char.IsLetter(_line[_pos]) || IsMatch('_'));
+        }
+
         private bool IsId()
         {
             // (LETTER | UNDERSCORE) LETTER_OR_DIGIT*
 
-            string result = "";
-
-            if (!char.IsLetter(_line[_pos]) && !IsMatch('_'))
+            if (!IsLetter())
             {
                 return false;
             }
 
-            result += _line[_pos++];
+            _pos++;
 
-            while (char.IsLetterOrDigit(_line[_pos]) || !IsMatch('_'))
+            while (IsLetterOrDigit())
             {
-                result += _line[_pos++];
+                _pos++;
             }
 
-            return result != "true" && result != "false";
+            return true;
+        }
+
+        private bool IsLetterOrDigit()
+        {
+            return !IsEndLine() && (IsLetter() || char.IsDigit(_line[_pos]));
         }
 
         private void SkipWhiteSpace()
@@ -271,6 +345,124 @@ namespace CCompilerNet.Lex
             {
                 _pos++;
             }
+        }
+
+        private bool IsComment()
+        {
+            return IsSingleLineComment() || IsMultiLineComment();
+        }
+
+        private bool IsSingleLineComment()
+        {
+            // store the start point
+            int originalPos = _pos;
+
+            if (_commentMode)
+            {
+                return false;
+            }
+
+            if (!IsMatch('/'))
+            {
+                return false;
+            }
+
+            _pos++;
+
+            if (!IsMatch('/'))
+            {
+                _pos = originalPos;
+                return false;
+            }
+
+            _pos++;
+
+            return true;
+        }
+
+        private bool IsMultiLineComment()
+        {
+            // store the start point
+            int originalPos = _pos;
+            bool starFound = false;
+
+            if (!_commentMode)
+            {
+                if (!IsMatch('/'))
+                {
+                    return false;
+                }
+
+                _pos++;
+
+                if (!IsMatch('*'))
+                {
+                    _pos = originalPos;
+                    return false;
+                }
+
+                _pos++;
+                _commentMode = true;
+
+            }
+
+            while (!IsEndLine())
+            {
+                if (IsMatch('*'))
+                {
+                    starFound = true;
+                }
+
+                _pos++;
+
+                if (IsMatch('/') && starFound)
+                {
+                    _pos++;
+
+                    _commentMode = false;
+
+                    SkipWhiteSpace();
+
+                    if (IsEndLine() && GetNextLine())
+                    {
+                        return IsComment();
+                    }
+
+                    return IsComment();
+                }
+
+                starFound = false;
+            }
+
+            return false;
+        }
+
+        private bool GetNextLine()
+        {
+            if (!_stream.EndOfStream)
+            {
+                _line = _stream.ReadLine();
+                _pos = 0;
+                SkipWhiteSpace();
+                return true;
+            }
+            return false;
+        }
+
+        private bool IsSpecialSymbol()
+        {
+            char[] specialSymbols = {
+                '[', ']', '(', ')', ',', ';', ':', '{', '}',
+	        };
+
+            if (!IsEndLine() && !specialSymbols.Contains(_line[_pos]))
+            {
+                return false;
+            }
+
+            _pos++;
+
+            return true;
         }
     }
 }

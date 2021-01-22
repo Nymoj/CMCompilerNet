@@ -12,7 +12,12 @@ namespace CCompilerNet
     {
         static void Main(string[] args)
         {
-            
+            Lexer lexer = new Lexer(args[0]);
+
+            while (lexer.Peek() != null)
+            {
+                Console.WriteLine(lexer.GetNextToken());
+            }
         }
     }
 }

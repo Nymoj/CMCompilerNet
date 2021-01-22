@@ -14,6 +14,7 @@ namespace CCompilerNet.Lex
         StringLiteral,
         SpecialSymbol,
         Operator,
+        BadToken,
     }
 
     public class Token
