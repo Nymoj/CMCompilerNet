@@ -19,18 +19,18 @@ namespace CCompilerNet.Lex
 
     public class Token
     {
-        public TokenType _type { get; set; }
-        public string _value { get; set; }
+        public TokenType Type { get; set; }
+        public string Value { get; set; }
 
         public Token(TokenType type, string value)
         {
-            _type = type;
-            _value = value;
+            Type = type;
+            Value = value;
         }
 
         public override string ToString()
         {
-            return String.Format("<{0}>{1}</{2}>", _type, _value, _type);
+            return String.Format("<{0}>{1}</{2}>", Type, Value, Type);
         }
     }
 }
