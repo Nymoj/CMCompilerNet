@@ -1,11 +1,12 @@
-﻿using System;
+﻿using CCompilerNet.Lex;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.IO;
 
-namespace CCompilerNet.Lex
+namespace CCompilerNet
 {
     public class Lexer
     {
@@ -13,7 +14,7 @@ namespace CCompilerNet.Lex
         private string _line;
         private bool _commentMode;
         private int _pos;
-        
+
         public Lexer(string path)
         {
             _stream = new StreamReader(path);
@@ -80,11 +81,6 @@ namespace CCompilerNet.Lex
             {
                 token = new Token(TokenType.Operator, CutTokenFromLine(startPos));
             }
-            else
-            {
-                token = new Token(TokenType.BadToken, CutTokenFromLine(startPos));
-                _pos++;
-            }
 
             return token;
         }
@@ -111,7 +107,28 @@ namespace CCompilerNet.Lex
 
         private bool IsConstant()
         {
-            return IsNumConst() || IsCharConst();
+            return IsNumConst() || IsCharConst() || IsBooleanConst();
+        }
+
+        private bool IsBooleanConst()
+        {
+            string result = "";
+
+            if (!IsLetter())
+            {
+                return false;
+            }
+
+            result += _line[_pos];
+            _pos++;
+
+            while (IsLetterOrDigit())
+            {
+                result += _line[_pos];
+                _pos++;
+            }
+
+            return result == "true" || result == "false";
         }
 
         private bool IsNumConst()
@@ -232,7 +249,9 @@ namespace CCompilerNet.Lex
 		        "=", "+=", "-=", "*=", "/=", "%=",
 		        // conditional operator
 		        "?",
-	        };
+                // max and min operators
+                ":>:", ":<:",
+            };
 
             if (!operators.Contains(op))
             {
@@ -274,13 +293,14 @@ namespace CCompilerNet.Lex
 
             List<string> keywords = new List<string>{
                 "auto", "break", "case", "char",
-		        "const", "continue", "default", "do",
-		        "double", "else", "enum", "extern",
-		        "float", "for", "goto", "if",
-		        "int", "long", "register", "return",
-		        "short", "signed", "sizeof", "static",
-		        "struct", "switch", "typedef", "union",
-		        "unsigned", "void", "volatile", "while"
+                "const", "continue", "default", "do",
+                "double", "else", "enum", "extern",
+                "float", "for", "goto", "if", "then",
+                "to", "by", "or", "and", "not",
+                "int", "long", "register", "return",
+                "short", "signed", "sizeof", "static",
+                "struct", "switch", "typedef", "union",
+                "unsigned", "void", "volatile", "while"
             };
 
             string result = "";
@@ -453,7 +473,7 @@ namespace CCompilerNet.Lex
         {
             char[] specialSymbols = {
                 '[', ']', '(', ')', ',', ';', ':', '{', '}',
-	        };
+            };
 
             if (!IsEndLine() && !specialSymbols.Contains(_line[_pos]))
             {
