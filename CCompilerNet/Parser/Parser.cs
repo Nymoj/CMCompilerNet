@@ -50,11 +50,7 @@ namespace CCompilerNet.Parser
                     Error(tokenValue + " expected");
                 }
 
-                Error(tokenValue
-                    + " expected, but "
-                    + _currentToken.Value
-                    + " was passed"
-                );
+                Error(string.Format("{0} expected, but {1} was passed", tokenValue, _currentToken.Value));
             }
         }
 
@@ -74,9 +70,12 @@ namespace CCompilerNet.Parser
         public void Error(string errorMessage)
         {
             Console.WriteLine("Error: " + errorMessage);
+            System.Environment.Exit(1);
         }
 
-        // program → declList
+        #region Declarations
+
+        // program -> declList
         private bool CompileProgram()
         {
             var root = new ASTNode("program");
@@ -90,44 +89,196 @@ namespace CCompilerNet.Parser
             return false;
         }
 
-        // declList → declList decl | decl   =>   decList → decl decList'   decList' → decl decList' | epsilon
+        // declList -> declList decl | decl   =>   decList → decl decList'   decList' → decl decList' | epsilon
         private bool CompileDecList(ASTNode parent)
         {
-            var compileDecList = new ASTNode("decList");
+            ASTNode compileDecList = new ASTNode("decList");
             parent.Add(compileDecList);
 
             if (CompileDecl(compileDecList))
             {
-                if (CompileDecListTag(compileDecList))
+                if (CompileDeclListTag(compileDecList))
                 {
                     return true;
                 }
             }
 
-            return false; // throw?
+            return false;
         }
 
-        // decList' → decl decList' | epsilon
-        private bool CompileDecListTag(ASTNode parent)
+        // decList' -> decl decList' | epsilon
+        private bool CompileDeclListTag(ASTNode parent)
         {
-            var compileDecListTag = new ASTNode("compileDecListTag");
-            parent.Add(compileDecListTag);
+            ASTNode compileDeclListTag = new ASTNode("declListTag");
+            parent.Add(compileDeclListTag);
 
-            if (CompileDecl(compileDecListTag))
+            if (CompileDecl(compileDeclListTag))
             {
-                if (CompileDecListTag(compileDecListTag))
+                if (CompileDeclListTag(compileDeclListTag))
                 {
                     return true;
                 }
             }
 
-            return true; // not sure. check this.
+            return false;
         }
 
+        // decl -> varDecl | funDecl
         private bool CompileDecl(ASTNode parent)
+        {
+            ASTNode compileDecl = new ASTNode("decl");
+            parent.Add(compileDecl);
+
+            return CompileVarDecl(compileDecl) || CompileFunDecl(compileDecl);
+        }
+        #endregion
+
+        #region Variable Declarations
+        private bool CompileVarDecl(ASTNode parent)
+        {
+            ASTNode varDecl = new ASTNode("varDecl");
+            parent.Add(varDecl);
+
+            if (CompileTypeSpec(varDecl))
+            {
+                if (CompileVarDeclList(varDecl))
+                {
+                    if (!IsValueEquals(";"))
+                    {
+                        return false;
+                    }
+
+                    EatToken();
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool CompileScopedVarDecl(ASTNode parent)
         {
             throw new NotImplementedException();
         }
-    }
 
+        // varDeclList -> varDeclList, varDeclInit | varDeclInit
+        // varDeclList -> varDeclInit varDeclList`
+        // varDeclList` -> , varDeclInit varDeclList` | epsilon
+        private bool CompileVarDeclList(ASTNode parent)
+        {
+            ASTNode varDeclList = new ASTNode("varDeclList");
+            parent.Add(varDeclList);
+
+            if (CompileVarDeclInit(varDeclList))
+            {
+                if (CompileVarDeclListTag(varDeclList))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // varDeclList` -> , varDeclInit varDeclList` | epsilon
+        private bool CompileVarDeclListTag(ASTNode parent)
+        {
+            ASTNode varDeclListTag = new ASTNode("varDeclListTag");
+            parent.Add(varDeclListTag);
+
+            if (!IsValueEquals(","))
+            {
+                // epsilon - empty, assuming that the declaration has ended
+                return true;
+            }
+
+            EatToken();
+
+            if (CompileVarDeclInit(varDeclListTag))
+            {
+                if (CompileVarDeclListTag(varDeclListTag))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // varDeclInit -> varDeclId | varDeclId : simpleExp
+        private bool CompileVarDeclInit(ASTNode parent)
+        {
+            ASTNode varDeclInit = new ASTNode("varDeclInit");
+            parent.Add(varDeclInit);
+
+            if (!CompileVarDeclId(varDeclInit))
+            {
+                return false;
+            }
+
+            // if didn't encounter :, then it's -> varDeclId
+            if (!IsValueEquals(":"))
+            {
+                return true;
+            }
+
+            EatToken();
+
+            // else it's -> varDeclId : simpleExp
+            return CompileSimpleExp(varDeclInit);
+        }
+
+        private bool CompileSimpleExp(ASTNode varDeclInit)
+        {
+            throw new NotImplementedException();
+        }
+
+        private bool CompileVarDeclId(ASTNode parent)
+        {
+            ASTNode varDeclId = null;
+            // parent.Add(varDeclId);
+
+            if (!IsTokenTypeEquals(TokenType.ID))
+            {
+                return false;
+            }
+
+            // saving the ID
+            varDeclId = new ASTNode("varDeclId", _currentToken);
+            EatToken();
+
+            // ID
+            if (!IsValueEquals("["))
+            {
+                parent.Add(varDeclId);
+                return true;
+            }
+
+            EatToken();
+
+            if (!CompileSimpleExp(varDeclId))
+            {
+                return false;
+            }
+
+            if (!IsValueEquals("]"))
+            {
+                return false;
+            }
+
+            EatToken();
+            return true;
+        }
+
+        private bool CompileTypeSpec(ASTNode parent)
+        {
+            throw new NotImplementedException();
+        }
+
+        private bool CompileFunDecl(ASTNode parent)
+        {
+            throw new NotImplementedException();
+        }
+        #endregion
+    }
 }
