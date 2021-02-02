@@ -156,9 +156,33 @@ namespace CCompilerNet.Parser
             return false;
         }
 
+        // scopedVarDecl -> static typeSpec varDeclList ; | typeSpec varDeclList ;
         private bool CompileScopedVarDecl(ASTNode parent)
         {
-            throw new NotImplementedException();
+            ASTNode scopedVarDecl = new ASTNode("scopedVarDecl");
+
+            if (IsValueEquals("static"))
+            {
+                scopedVarDecl.Add(new ASTNode("static", _currentToken));
+            }
+
+            if (!CompileTypeSpec(scopedVarDecl))
+            {
+                return false;
+            }
+
+            if (!CompileVarDeclList(scopedVarDecl))
+            {
+                return false;
+            }
+
+            if (!IsValueEquals(";"))
+            {
+                return false;
+            }
+
+            parent.Add(scopedVarDecl);
+            return true;
         }
 
         // varDeclList -> varDeclList, varDeclInit | varDeclInit
@@ -272,10 +296,80 @@ namespace CCompilerNet.Parser
 
         private bool CompileTypeSpec(ASTNode parent)
         {
-            throw new NotImplementedException();
+            ASTNode typeSpec = null;
+
+            if (IsValueEquals("int") || IsValueEquals("bool") || IsValueEquals("char"))
+            {
+                typeSpec = new ASTNode("typeSpec", _currentToken);
+                parent.Add(typeSpec);
+
+                EatToken();
+                return true;
+            }
+            return false;
         }
 
         private bool CompileFunDecl(ASTNode parent)
+        {
+            ASTNode funDecl = new ASTNode("funDecl");
+
+            CompileTypeSpec(funDecl);
+
+            if (!IsTokenTypeEquals(TokenType.ID))
+            {
+                return false;
+            }
+
+            funDecl.Add(new ASTNode("id", _currentToken));
+            EatToken();
+
+            if (!IsValueEquals("("))
+            {
+                return false;
+            }
+
+            EatToken();
+
+            if (!CompileParms(funDecl))
+            {
+                return false;
+            }
+
+            if (!IsValueEquals(")"))
+            {
+                return false;
+            }
+
+            EatToken();
+
+            parent.Add(funDecl);
+            return CompileStmt(funDecl);
+        }
+
+        private bool CompileStmt(ASTNode parent)
+        {
+            throw new NotImplementedException();
+        }
+
+        private bool CompileParms(ASTNode parent)
+        {
+            ASTNode parms = new ASTNode("parms");
+            // no parameters
+            if (IsValueEquals(")"))
+            {
+                return true;
+            }
+
+            if (!CompileParmsList(parms))
+            {
+                return false;
+            }
+
+            parms.Add(parms);
+            return true;
+        }
+
+        private bool CompileParmsList(ASTNode parent)
         {
             throw new NotImplementedException();
         }
