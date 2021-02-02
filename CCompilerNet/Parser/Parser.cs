@@ -257,6 +257,7 @@ namespace CCompilerNet.Parser
             throw new NotImplementedException();
         }
 
+        // varDeclId -> ID | ID [ NUMCONST ]
         private bool CompileVarDeclId(ASTNode parent)
         {
             ASTNode varDeclId = null;
@@ -280,10 +281,13 @@ namespace CCompilerNet.Parser
 
             EatToken();
 
-            if (!CompileSimpleExp(varDeclId))
+            // must be checked further if const is a numconst
+            if (!IsTokenTypeEquals(TokenType.Const))
             {
                 return false;
             }
+
+            EatToken();
 
             if (!IsValueEquals("]"))
             {
@@ -291,9 +295,11 @@ namespace CCompilerNet.Parser
             }
 
             EatToken();
+            parent.Add(varDeclId);
             return true;
         }
 
+        // typeSpec -> int | bool | char
         private bool CompileTypeSpec(ASTNode parent)
         {
             ASTNode typeSpec = null;
@@ -309,6 +315,7 @@ namespace CCompilerNet.Parser
             return false;
         }
 
+        // funDecl -> typeSpec ID ( parms ) stmt | ID ( parms ) stmt
         private bool CompileFunDecl(ASTNode parent)
         {
             ASTNode funDecl = new ASTNode("funDecl");
@@ -351,6 +358,7 @@ namespace CCompilerNet.Parser
             throw new NotImplementedException();
         }
 
+        // parms -> parmList | epsilon
         private bool CompileParms(ASTNode parent)
         {
             ASTNode parms = new ASTNode("parms");
