@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 using CCompilerNet.Lex;
+using CCompilerNet.Parser;
 
 namespace CCompilerNet
 {
@@ -12,14 +14,14 @@ namespace CCompilerNet
     {
         static void Main(string[] args)
         {
-            if (args.Length == 0) return;
+            StreamWriter outputFile = new StreamWriter("output.xml");
+            Parser.Parser parser = new Parser.Parser(args[0]);
+            parser.CompileProgram();
 
-            Lexer lexer = new Lexer(args[0]);
+            AST ast = parser._ast;
 
-            while (lexer.Peek() != null)
-            {
-                Console.WriteLine(lexer.GetNextToken());
-            }
+            outputFile.Write(ast.ToString());
+            outputFile.Close();
         }
     }
 }

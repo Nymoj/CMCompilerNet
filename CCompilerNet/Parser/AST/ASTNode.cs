@@ -20,10 +20,11 @@ namespace CCompilerNet.Parser
         /* Constructors */
         public ASTNode(string tag, Token token = null)
         {
+            Children = new List<ASTNode>();
             Tag = tag;
             Token = token;
+            Level = 0;
         }
-
 
         /* Public Methods */
         /// <summary>
@@ -45,14 +46,20 @@ namespace CCompilerNet.Parser
             string tabs = new string('\t', Level);
 
             string result = "";
+            result += tabs + Token?.ToString();
+
             foreach (ASTNode child in Children)
             {
                 result += child.ToString();
             }
 
-            return tabs + "<" + Tag + ">" +
-                   "\n\t" + tabs + result +
-                   tabs + "</" + Tag + ">";
+            /*return tabs + "<" + Tag + ">" + '\n' +
+                   "\t" + tabs + result +
+                   tabs + "</" + Tag + ">" + '\n';*/
+            //return string.Format("{0}<{1}>\n{0}\t{2}\n{0}</{1}>\n", tabs, Tag, result);
+            return tabs + "<" + Tag + ">" + '\n' +
+                   "\t" + tabs + result + '\n' +
+                   tabs + "</" + Tag + ">\n";
         }
     }
 }

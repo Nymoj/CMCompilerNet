@@ -13,7 +13,7 @@ namespace CCompilerNet.Parser
         private string _filePath;
         private Lexer _lexer;
         private Token _currentToken;
-        private AST _ast;
+        public AST _ast { get; private set; }
 
         public Parser(Parser other)
         {
@@ -23,25 +23,26 @@ namespace CCompilerNet.Parser
 
         public Parser(string filePath)
         {
+            _lexer = new Lexer(filePath);
             _currentToken = _lexer.GetNextToken();
         }
 
-        public void EatToken()
+        private void EatToken()
         {
             _currentToken = _lexer.GetNextToken();
         }
 
-        public bool IsTokenTypeEquals(TokenType tokenType)
+        private bool IsTokenTypeEquals(TokenType tokenType)
         {
             return _currentToken != null && _currentToken.Type == tokenType;
         }
 
-        public bool IsValueEquals(string value)
+        private bool IsValueEquals(string value)
         {
             return _currentToken != null && _currentToken.Value == value;
         }
 
-        public void ExpectedToken(TokenType tokenType, string tokenValue)
+        private void ExpectedToken(TokenType tokenType, string tokenValue)
         {
             if (!IsTokenTypeEquals(tokenType) || !IsValueEquals(tokenValue))
             {
@@ -76,12 +77,12 @@ namespace CCompilerNet.Parser
         #region Declarations
 
         // program -> declList
-        private bool CompileProgram()
+        public bool CompileProgram()
         {
             var root = new ASTNode("program");
             _ast = new AST(root);
 
-            if (CompileDecList(root))
+            if (CompileDeclList(root))
             {
                 return true;
             }
@@ -90,9 +91,9 @@ namespace CCompilerNet.Parser
         }
 
         // declList -> declList decl | decl   =>   decList → decl decList'   decList' → decl decList' | epsilon
-        private bool CompileDecList(ASTNode parent)
+        private bool CompileDeclList(ASTNode parent)
         {
-            ASTNode compileDecList = new ASTNode("decList");
+            ASTNode compileDecList = new ASTNode("declList");
             parent.Add(compileDecList);
 
             if (CompileDecl(compileDecList))
@@ -126,10 +127,20 @@ namespace CCompilerNet.Parser
         // decl -> varDecl | funDecl
         private bool CompileDecl(ASTNode parent)
         {
-            ASTNode compileDecl = new ASTNode("decl");
+            /*ASTNode compileDecl = new ASTNode("decl");
             parent.Add(compileDecl);
 
-            return CompileVarDecl(compileDecl) || CompileFunDecl(compileDecl);
+            return CompileVarDecl(compileDecl) || CompileFunDecl(compileDecl);*/
+
+            ASTNode decl = new ASTNode("decl");
+
+            if (!CompileVarDecl(decl) && !CompileFunDecl(decl))
+            {
+                return false;
+            }
+
+            parent.Add(decl);
+            return true;
         }
         #endregion
 
@@ -137,9 +148,9 @@ namespace CCompilerNet.Parser
         private bool CompileVarDecl(ASTNode parent)
         {
             ASTNode varDecl = new ASTNode("varDecl");
-            parent.Add(varDecl);
+            //parent.Add(varDecl);
 
-            if (CompileTypeSpec(varDecl))
+            /*if (CompileTypeSpec(varDecl))
             {
                 if (CompileVarDeclList(varDecl))
                 {
@@ -149,11 +160,29 @@ namespace CCompilerNet.Parser
                     }
 
                     EatToken();
+                    parent.Add(varDecl);
                     return true;
                 }
+            }*/
+
+            if (!CompileTypeSpec(varDecl))
+            {
+                return false;
             }
 
-            return false;
+            if (!CompileVarDeclList(varDecl))
+            {
+                return false;
+            }
+
+            if (!IsValueEquals(";"))
+            {
+                return false;
+            }
+
+            EatToken();
+            parent.Add(varDecl);
+            return true;
         }
 
         // scopedVarDecl -> static typeSpec varDeclList ; | typeSpec varDeclList ;
@@ -287,6 +316,7 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
+            varDeclId.Add(new ASTNode("numconst", _currentToken));
             EatToken();
 
             if (!IsValueEquals("]"))
@@ -368,7 +398,7 @@ namespace CCompilerNet.Parser
                 return true;
             }
 
-            if (!CompileParmsList(parms))
+            if (!CompileParmList(parms))
             {
                 return false;
             }
@@ -377,9 +407,150 @@ namespace CCompilerNet.Parser
             return true;
         }
 
-        private bool CompileParmsList(ASTNode parent)
+        // parmList -> parmList ; parmTypeList | parmTypeList
+        // parmList -> parmTypeList parmList`
+        // parmList` -> ; parmTypeList parmList` | epsilon
+        private bool CompileParmList(ASTNode parent)
         {
-            throw new NotImplementedException();
+            ASTNode parmList = new ASTNode("parmList");
+
+            if (!CompileParmTypeList(parmList))
+            {
+                return false;
+            }
+
+            if (!CompileParmListTag(parmList))
+            {
+                return false;
+            }
+
+            parent.Add(parmList);
+            return true;
+        }
+
+        // parmList` -> ; parmTypeList parmList` | epsilon
+        private bool CompileParmListTag(ASTNode parent)
+        {
+            ASTNode parmListTag = new ASTNode("parmListTag");
+
+            // epsilon
+            if (!IsValueEquals(";"))
+            {
+                return true;
+            }
+
+            EatToken();
+
+            if (!CompileParmTypeList(parmListTag))
+            {
+                return false;
+            }
+
+            if (!CompileParmListTag(parmListTag))
+            {
+                return false;
+            }
+
+            parent.Add(parmListTag);
+            return true;
+        }
+
+        // typeSpec parmIdList
+        private bool CompileParmTypeList(ASTNode parent)
+        {
+            ASTNode parmTypeList = new ASTNode("parmTypeList");
+
+            if (!CompileTypeSpec(parmTypeList))
+            {
+                return false;
+            }
+
+            if (!CompileParmIdList(parmTypeList))
+            {
+                return false;
+            }
+
+            parent.Add(parmTypeList);
+            return true;
+        }
+
+        // parmIdList -> parmIdList , parmId | parmId
+        // parmIdList -> parmId parmIdList`
+        // parmIdList` -> , parmId parmIdList` | epsilon
+        private bool CompileParmIdList(ASTNode parent)
+        {
+            ASTNode parmIdList = new ASTNode("parmIdList");
+
+            if (!CompileParmId(parmIdList))
+            {
+                return false;
+            }
+
+            if (!CompileParmIdListTag(parmIdList))
+            {
+                return false;
+            }
+
+            parent.Add(parmIdList);
+            return true;
+        }
+
+        // parmIdList` -> , parmId parmIdList` | epsilon
+        private bool CompileParmIdListTag(ASTNode parent)
+        {
+            ASTNode parmIdListTag = new ASTNode("parmIdListTag");
+            
+            // epsilon
+            if (!IsValueEquals(";"))
+            {
+                return true;
+            }
+
+            EatToken();
+
+            if (!CompileParmId(parmIdListTag))
+            {
+                return false;
+            }
+
+            if (!CompileParmIdListTag(parmIdListTag))
+            {
+                return false;
+            }
+
+            parent.Add(parmIdListTag);
+            return true;
+        }
+
+        // parmId -> ID | ID [ ]
+        private bool CompileParmId(ASTNode parent)
+        {
+            ASTNode parmId = null;
+
+            if (!IsTokenTypeEquals(TokenType.ID))
+            {
+                return false;
+            }
+
+            parmId = new ASTNode("parmId", _currentToken);
+            EatToken();
+
+            // ID
+            if (!IsValueEquals("["))
+            {
+                parent.Add(parmId);
+                return true;
+            }
+
+            EatToken();
+
+            if (!IsValueEquals("]"))
+            {
+                return false;
+            }
+
+            parent.Add(parmId);
+            return true;
         }
         #endregion
     }

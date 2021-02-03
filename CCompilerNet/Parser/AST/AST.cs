@@ -17,5 +17,10 @@ namespace CCompilerNet.Parser
             Root = root;
             Root.Level = 0;
         }
+
+        public override string ToString()
+        {
+            return Root.ToString();
+        }
     }
 }
