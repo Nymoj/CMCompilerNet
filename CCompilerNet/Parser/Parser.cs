@@ -271,12 +271,7 @@ namespace CCompilerNet.Parser
             return true;
         }
 
-        private bool CompileSimpleExp(ASTNode varDeclInit)
-        {
-            // TODO
-            return true;
-        }
-
+        
         // varDeclId -> ID | ID [ NUMCONST ]
         private bool CompileVarDeclId(ASTNode parent)
         {
@@ -544,5 +539,651 @@ namespace CCompilerNet.Parser
             return true;
         }
         #endregion
+
+        #region Expression
+
+
+        // exp -> mutable = exp | mutable += exp | mutable -= exp | mutable *= exp | mutable /= exp | mutable++ | mutable-- | simpleExp
+        private bool CompileExp(ASTNode parent)
+        {
+            ASTNode expression = new ASTNode("expression");
+            List<string> mutables = new List<string>{ "=", "+=", "-=", "*=", "/=" };   //list of operators that lead to another expression
+
+            if (CompileMutable(expression))    //checks if its a mutable expression
+            {
+                if (_currentToken == null)
+                {
+                    return false;
+                }
+
+                if (mutables.Contains(_currentToken.Value)) // checks if mutable -> exp
+                {
+                    expression.Add(new ASTNode("operator", _currentToken)); //add operator to node of the expression
+
+                    if (CompileExp(expression))
+                    {
+                        parent.Add(expression);
+                        EatToken();
+                        return true;
+                    }
+
+                    return false;
+
+                }
+
+                if (_currentToken.Value == "++" || _currentToken.Value == "--")
+                {
+                    expression.Add(new ASTNode("operator", _currentToken));   //add operator to node of the expression
+
+                    parent.Add(expression);
+                    EatToken();
+                    return true;
+                }
+
+            }
+            else if (CompileSimpleExp(expression)) //checks if its a simple expression
+            {
+                parent.Add(expression);
+                return true;
+            }
+
+            return false;
+        }
+
+        // simpleExp -> simpleExp or andExp | andExp
+        // simpleExp -> andExp SimpleExp'
+        // simpleExp' -> or andExp simpleExp' | epsilon
+        private bool CompileSimpleExp(ASTNode parent)
+        {
+            ASTNode simpleExp = new ASTNode("simpleExpression");
+
+            if (!CompileAndExp(simpleExp))                        
+            { 
+                return false;
+            }
+
+            if (!CompileSimpleExpTag(simpleExp))
+            {
+                return false;
+            }
+
+            parent.Add(simpleExp);
+            return true;
+        }
+        private bool CompileSimpleExpTag(ASTNode parent)
+        {
+            ASTNode simpleExpTag = new ASTNode("simpleExpressionTag");
+
+            if (!IsValueEquals("or"))
+            {
+                return true;
+            }
+
+            EatToken();
+
+            if (!CompileAndExp(simpleExpTag))
+            {
+                return false;
+            }
+
+            if (!CompileSimpleExpTag(simpleExpTag))
+            {
+                return false;
+            }
+
+            parent.Add(simpleExpTag);
+            return true;
+        }
+
+        // AndExp -> andExp and unaryRelExp | unaryRelExp
+        // AndExp -> unaryRelExp AndExp'
+        // AndExp' -> and unaryRelExp AndExp' | epsilon
+        private bool CompileAndExp(ASTNode parent)
+        {
+            ASTNode andExp = new ASTNode("andExpression");
+
+            if (!CompileUnaryRelExp(andExp))
+            {
+                return false;
+            }
+
+            if (!CompileAndExpTag(andExp))
+            {
+                return false;
+            }
+
+            parent.Add(andExp);
+            return true;
+        }
+
+        private bool CompileAndExpTag(ASTNode parent)
+        {
+            ASTNode andExpTag = new ASTNode("andExpressionTag");
+
+            if (!IsValueEquals("and"))
+            {
+                return true;
+            }
+
+            EatToken();
+
+            if (!CompileUnaryRelExp(andExpTag))
+            {
+                return false;
+            }
+
+            if (!CompileAndExpTag(andExpTag))
+            {
+                return false;
+            }
+
+            parent.Add(andExpTag);
+            return true;
+        }
+
+        //unaryRelExp -> not unaryRelExp | relExp
+        private bool CompileUnaryRelExp(ASTNode parent)
+        {
+            ASTNode unaryRelExp = new ASTNode("unaryRelExpression");
+
+            if (IsValueEquals("not"))
+            {
+                EatToken();
+
+                if (!CompileUnaryRelExp(unaryRelExp))
+                {
+                    return false;
+                }
+
+                parent.Add(unaryRelExp);
+                return true;
+            }
+
+            if (CompileRelExp(unaryRelExp))
+            {
+                parent.Add(unaryRelExp);
+                return true;
+            }
+            return false;   
+        }
+
+        //relExp -> MinMaxExp relop MinMaxExp | MinMaxExp
+        private bool CompileRelExp(ASTNode parent)
+        {
+            ASTNode relExp = new ASTNode("relExpression");
+
+            if (!CompileMinMaxExp(relExp))
+            {
+                return false;
+            }
+
+            if (!CompileRelop(relExp))  //if no relop after MinMaxExp then its the 2nd variation
+            {
+                parent.Add(relExp);
+                return true;
+            }
+
+            if (!CompileMinMaxExp(relExp))
+            {
+                return false;
+            }
+
+            parent.Add(relExp);
+            return true;
+        }
+        
+        //relop -> <= | < | > | >= | == | !=
+        private bool CompileRelop(ASTNode parent)
+        {
+            List<string> operators = new List<string> { "<=", "<", ">", ">=", "==", "!=" }; //list of relop operators
+            ASTNode relop = new ASTNode("relop");
+            if (!operators.Contains(_currentToken.Value))
+            {
+                return false;
+            }
+
+            relop.Add(new ASTNode("operator", _currentToken));    //add the operator to the relop node
+            EatToken();  //move on to the next token after adding it
+
+            parent.Add(relop);  //add to parent node
+
+            return true;
+
+        }
+        // minmaxExp -> minmaxExp minmaxOp sumExp | sumExp
+        // minmaxExp -> sumExp minmaxExp'
+        //minmaxExp' -> minmaxOp sumExp minmaxExp'  | epsilon
+        private bool CompileMinMaxExp(ASTNode parent)
+        {
+            ASTNode minMaxExp = new ASTNode("minMaxExpression");
+
+            if (!CompileSumExp(minMaxExp))
+            {
+                return false;
+            }
+
+            if (!CompileMinMaxExpTag(minMaxExp))
+            {
+                return false;
+            }
+
+            parent.Add(minMaxExp);
+            return true;
+        }
+
+        private bool CompileMinMaxExpTag(ASTNode parent)
+        {
+            ASTNode minMaxExpTag = new ASTNode("minMaxExpressionTag");
+
+            if (!CompileMinMaxOp(minMaxExpTag))
+            {
+                return true;
+            }
+
+            if (!CompileSumExp(minMaxExpTag))
+            {
+                return false;
+            }
+
+            if (!CompileMinMaxExpTag(minMaxExpTag))
+            {
+                return false;
+            }
+
+            parent.Add(minMaxExpTag);
+
+            return true;
+        }
+
+        //MinMaxOp -> :>: | :<:
+        private bool CompileMinMaxOp(ASTNode parent)
+        {
+            ASTNode minMaxOp = new ASTNode("minMaxOp");
+
+            if (_currentToken.Value != ":>:" && _currentToken.Value != ":<:")
+            {
+                return false;
+            }
+
+            minMaxOp.Add(new ASTNode("operator", _currentToken)); //add operator to node
+            EatToken(); //move over to next token 
+
+            parent.Add(minMaxOp); //add node to parent
+
+            return true;
+        }
+
+        //SumExp -> SumExp sumOp mulExp | mulExp
+        //SumExp -> mulExp SumExp'
+        //SumExp' -> sumOp mulExp SumExp' | Epsilon
+        private bool CompileSumExp(ASTNode parent)
+        {
+            ASTNode sumExp = new ASTNode("sumExpression");
+
+            if (!CompileMulExp(sumExp))
+            {
+                return false;
+            }
+
+            if (!CompileSumExpTag(sumExp))
+            {
+                return false;
+            }
+
+            parent.Add(sumExp);
+
+            return true;
+        }
+        private bool CompileSumExpTag(ASTNode parent)
+        {
+            ASTNode sumExpTag = new ASTNode("sumExpressionTag");
+
+            if (!CompileSumOp(sumExpTag))
+            {
+                return true;
+            }
+
+            if (!CompileMulExp(sumExpTag))
+            {
+                return false;
+            }
+
+            if (!CompileSumExpTag(sumExpTag))
+            {
+                return false;
+            }
+
+            parent.Add(sumExpTag);
+
+            return true; 
+        }
+
+        //sumOp -> + | -
+        private bool CompileSumOp(ASTNode parent)
+        {
+            ASTNode sumOp = new ASTNode("sumOperator");
+
+            if (_currentToken.Value != "+" && _currentToken.Value != "-")
+            {
+                return false;
+            }
+
+            sumOp.Add(new ASTNode("operator", _currentToken));
+
+            EatToken();
+
+            parent.Add(sumOp);
+
+            return true;
+        }
+
+        //mulExp -> mulExp mulOp unaryExp | unaryExp
+        //mulExp -> unaryExp mulExp'
+        //mulExp' -> mulOp unaryExp mulExp' | epsilon 
+        private bool CompileMulExp(ASTNode parent)
+        {
+            ASTNode mulExp = new ASTNode("mulExpression");
+
+            if (!CompileUnaryExp(mulExp))
+            {
+                return false;
+            }
+
+            if (!CompileMulExpTag(mulExp))
+            {
+                return false;
+            }
+
+            parent.Add(mulExp);
+            return true;
+        }
+        private bool CompileMulExpTag(ASTNode parent)
+        {
+            ASTNode mulExpTag = new ASTNode("mulExpressionTag");
+
+            if (!CompileMulOp(mulExpTag))
+            {
+                return true;
+            }
+
+            if (!CompileUnaryExp(mulExpTag))
+            {
+                return false;
+            }
+
+            if (!CompileMulExpTag(mulExpTag))
+            {
+                return false;
+            }
+
+            parent.Add(mulExpTag);
+            return true;  
+        }
+
+        //mulOp -> * | / | %
+        private bool CompileMulOp(ASTNode parent)
+        {
+            ASTNode mulOp = new ASTNode("mulOperator");
+
+            if (_currentToken.Value != "*" && _currentToken.Value != "/" && _currentToken.Value != "%")
+            {
+                return false;
+            }
+
+            mulOp.Add(new ASTNode("operator", _currentToken));
+
+            EatToken();
+
+            parent.Add(mulOp);
+
+            return true;
+        }
+
+        //unaryExp -> unaryOp unaryExp | factor
+        private bool CompileUnaryExp(ASTNode parent)
+        {
+            ASTNode unaryExp = new ASTNode("unaryExp");
+
+            if (CompileUnaryOperator(unaryExp))
+            {
+                if (!CompileUnaryExp(unaryExp))
+                {
+                    return false;
+                }
+
+                parent.Add(unaryExp);
+                return true;
+            }
+            if (CompileFactor(unaryExp))
+            {
+                parent.Add(unaryExp);
+                return true;
+            }
+
+            return false;
+        }
+
+        //unaryOp -> - | * | ?
+        private bool CompileUnaryOperator(ASTNode parent)
+        {
+            ASTNode unaryOp = new ASTNode("unaryOperator");
+
+            if (_currentToken.Value != "-" && _currentToken.Value != "*" && _currentToken.Value != "?")
+            {
+                return false;
+            }
+
+            unaryOp.Add(new ASTNode("operator", _currentToken));
+
+            EatToken();
+
+            parent.Add(unaryOp);
+
+            return true;
+        }
+
+        //factor -> immutable | mutable
+        private bool CompileFactor(ASTNode parent)
+        {
+            ASTNode factor = new ASTNode("factor");
+
+            if (CompileImmutable(factor) || CompileMutable(factor))
+            {
+                parent.Add(factor);
+                return true;
+            }
+
+            return false;
+        }
+
+        //immutable ->  ( exp ) | call | constant
+        private bool CompileImmutable(ASTNode parent)
+        {
+            ASTNode immutable = new ASTNode("immutable");
+
+            if (IsValueEquals("("))
+            {
+                EatToken();
+
+                if (!CompileExp(immutable))
+                {
+                    return false;
+                }
+
+                if (!IsValueEquals(")"))
+                {
+                    return false;
+                }
+
+                EatToken();
+
+                parent.Add(immutable);
+                return true;
+            }
+
+            if (CompileCall(immutable) || CompileConst(immutable))
+            {
+                parent.Add(immutable);
+                return true;
+            }
+
+
+            return false;
+        }
+
+        //mutable -> ID | ID [exp]
+        private bool CompileMutable(ASTNode parent)
+        {
+            ASTNode mutable = new ASTNode("mutable");
+
+            if (!IsTokenTypeEquals(TokenType.ID))
+            {
+                return false;
+            }
+
+            mutable.Add(new ASTNode("ID", _currentToken));
+            EatToken();
+
+            if (!IsValueEquals("["))
+            {
+                return true;            //if no [ after id then its not an array
+            }
+
+            EatToken();
+
+            if (!CompileExp(mutable))  //must be an expression between the []
+            {
+                return false;
+            }
+
+            if (!IsValueEquals("]"))
+            {
+                return false;
+            }
+
+            EatToken();
+
+            parent.Add(mutable);
+
+            return true;
+        }
+
+        //call -> ID ( args )
+        private bool CompileCall(ASTNode parent)
+        {
+            ASTNode call = new ASTNode("call");
+
+            if (!IsTokenTypeEquals(TokenType.ID))
+            {
+                return false;
+            }
+
+            if (_lexer.Peek().Value != "(")
+            {
+                return false;
+            }
+
+            EatToken();
+            EatToken();
+
+            if (!CompileArgs(call))
+            {
+                return false;
+            }
+
+            if (!IsValueEquals(")"))
+            {
+                return false;
+            }
+
+            EatToken();
+
+            parent.Add(call);
+
+            return true;
+
+        }
+
+        //args -> argList | epsilon
+        private bool CompileArgs(ASTNode parent)
+        {
+            ASTNode args = new ASTNode("args");
+
+            if (!CompileArgList(args))
+            {
+                return true;
+            }
+
+            parent.Add(args);
+            return true;
+        }
+
+        //argList -> argList, exp | exp
+        //argList -> exp argList'
+        //argList -> , exp argList' | epsilon
+        private bool CompileArgList(ASTNode parent)
+        {
+            ASTNode argList = new ASTNode("argList");
+
+            if (!CompileExp(argList))
+            {
+                return false;
+            }
+
+            if (!CompileArgListTag(argList))
+            {
+                return false;
+            }
+
+            parent.Add(argList);
+            return true;
+        }
+        private bool CompileArgListTag(ASTNode parent)
+        {
+            ASTNode argListTag = new ASTNode("argListTag");
+
+            if (!IsValueEquals(","))
+            {
+                return true;
+            }
+
+            EatToken();
+
+            if (!CompileExp(argListTag))
+            {
+                return false;
+            }
+
+            if (!CompileArgListTag(argListTag))
+            {
+                return false;
+            }
+
+            parent.Add(argListTag);
+            return true;
+        }
+
+        //const -> NUMCONST | CHARCONST | STRINGCONST | true | false
+        private bool CompileConst(ASTNode parent)
+        {
+            ASTNode constant = new ASTNode("constant");
+
+            if (!IsTokenTypeEquals(TokenType.Const) & !IsTokenTypeEquals(TokenType.StringLiteral))
+            {
+                return false;
+            }
+
+            constant.Add(new ASTNode("const", _currentToken));
+
+            EatToken();
+
+            parent.Add(constant);
+
+            return true;
+        }
+
+        #endregion
+
+
     }
 }

@@ -16,7 +16,7 @@ namespace CCompilerNet.Parser
         public Token Token { get; set; }
         //public int Level { get; set; }
         private int _level;
-
+                                                                                    
         /* Constructors */
         public ASTNode(string tag, Token token = null, int level = 0)
         {
