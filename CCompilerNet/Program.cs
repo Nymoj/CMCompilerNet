@@ -14,13 +14,13 @@ namespace CCompilerNet
     {
         static void Main(string[] args)
         {
-            StreamWriter outputFile = new StreamWriter("output.xml");
+            StreamWriter outputFile = new StreamWriter("E:\\output.xml");
             Parser.Parser parser = new Parser.Parser(args[0]);
             parser.CompileProgram();
 
             AST ast = parser._ast;
 
-            outputFile.Write(ast.ToString());
+            outputFile.Write(ast?.ToString());
             outputFile.Close();
         }
     }

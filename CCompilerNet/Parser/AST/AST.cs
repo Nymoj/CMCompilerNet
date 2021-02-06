@@ -15,12 +15,11 @@ namespace CCompilerNet.Parser
         public AST(ASTNode root)
         {
             Root = root;
-            Root.Level = 0;
         }
 
         public override string ToString()
         {
-            return Root.ToString();
+            return ASTNode.Print(Root, 0);
         }
     }
 }

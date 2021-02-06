@@ -14,16 +14,16 @@ namespace CCompilerNet.Parser
         public string Tag { get; set; }
         public List<ASTNode> Children { get; private set; }
         public Token Token { get; set; }
-        public int Level { get; set; }
-
+        //public int Level { get; set; }
+        private int _level;
 
         /* Constructors */
-        public ASTNode(string tag, Token token = null)
+        public ASTNode(string tag, Token token = null, int level = 0)
         {
             Children = new List<ASTNode>();
             Tag = tag;
             Token = token;
-            Level = 0;
+            _level = level;
         }
 
         /* Public Methods */
@@ -33,33 +33,31 @@ namespace CCompilerNet.Parser
         /// <param name="node">Node to be added</param>
         public void Add(ASTNode node)
         {
-            node.Level = Level + 1;
+            //node.Level = Level + 1;
             Children.Add(node);
         }
 
-        /// <summary>
-        /// A string representation of the subtree who's root is the current node
-        /// </summary>
-        /// <returns>A string representing the subtree who's root is the current node</returns>
-        public override string ToString()
+        public static string Print(ASTNode node, int level)
         {
-            string tabs = new string('\t', Level);
+            string tabs = new string('\t', level);
 
             string result = "";
-            result += tabs + Token?.ToString();
 
-            foreach (ASTNode child in Children)
+            result += tabs + "<" + node.Tag + ">\n";
+
+            if (node.Token != null)
             {
-                result += child.ToString();
+                result += tabs + '\t' + node.Token.ToString() + '\n';
             }
 
-            /*return tabs + "<" + Tag + ">" + '\n' +
-                   "\t" + tabs + result +
-                   tabs + "</" + Tag + ">" + '\n';*/
-            //return string.Format("{0}<{1}>\n{0}\t{2}\n{0}</{1}>\n", tabs, Tag, result);
-            return tabs + "<" + Tag + ">" + '\n' +
-                   "\t" + tabs + result + '\n' +
-                   tabs + "</" + Tag + ">\n";
+            foreach (ASTNode child in node.Children)
+            {
+                result += ASTNode.Print(child, level + 1);
+            }
+
+            result += tabs + "</" + node.Tag + ">\n";
+
+            return result;
         }
     }
 }

@@ -23,6 +23,7 @@ namespace CCompilerNet.Parser
 
         public Parser(string filePath)
         {
+            _ast = null;
             _lexer = new Lexer(filePath);
             _currentToken = _lexer.GetNextToken();
         }
@@ -80,10 +81,10 @@ namespace CCompilerNet.Parser
         public bool CompileProgram()
         {
             var root = new ASTNode("program");
-            _ast = new AST(root);
-
+            
             if (CompileDeclList(root))
             {
+                _ast = new AST(root);
                 return true;
             }
 
@@ -94,12 +95,12 @@ namespace CCompilerNet.Parser
         private bool CompileDeclList(ASTNode parent)
         {
             ASTNode compileDecList = new ASTNode("declList");
-            parent.Add(compileDecList);
 
             if (CompileDecl(compileDecList))
             {
                 if (CompileDeclListTag(compileDecList))
                 {
+                    parent.Add(compileDecList);
                     return true;
                 }
             }
@@ -110,28 +111,26 @@ namespace CCompilerNet.Parser
         // decList' -> decl decList' | epsilon
         private bool CompileDeclListTag(ASTNode parent)
         {
-            ASTNode compileDeclListTag = new ASTNode("declListTag");
-            parent.Add(compileDeclListTag);
+            ASTNode declListTag = new ASTNode("declListTag");
 
-            if (CompileDecl(compileDeclListTag))
+            // epsilon
+            if (!CompileDecl(declListTag))
             {
-                if (CompileDeclListTag(compileDeclListTag))
-                {
-                    return true;
-                }
+                return true;
             }
 
-            return false;
+            if (!CompileDeclListTag(declListTag))
+            {
+                return false;
+            }
+
+            parent.Add(declListTag);
+            return true;
         }
 
         // decl -> varDecl | funDecl
         private bool CompileDecl(ASTNode parent)
         {
-            /*ASTNode compileDecl = new ASTNode("decl");
-            parent.Add(compileDecl);
-
-            return CompileVarDecl(compileDecl) || CompileFunDecl(compileDecl);*/
-
             ASTNode decl = new ASTNode("decl");
 
             if (!CompileVarDecl(decl) && !CompileFunDecl(decl))
@@ -148,22 +147,6 @@ namespace CCompilerNet.Parser
         private bool CompileVarDecl(ASTNode parent)
         {
             ASTNode varDecl = new ASTNode("varDecl");
-            //parent.Add(varDecl);
-
-            /*if (CompileTypeSpec(varDecl))
-            {
-                if (CompileVarDeclList(varDecl))
-                {
-                    if (!IsValueEquals(";"))
-                    {
-                        return false;
-                    }
-
-                    EatToken();
-                    parent.Add(varDecl);
-                    return true;
-                }
-            }*/
 
             if (!CompileTypeSpec(varDecl))
             {
@@ -214,18 +197,18 @@ namespace CCompilerNet.Parser
             return true;
         }
 
-        // varDeclList -> varDeclList, varDeclInit | varDeclInit
+        // varDeclList -> varDeclList , varDeclInit | varDeclInit
         // varDeclList -> varDeclInit varDeclList`
         // varDeclList` -> , varDeclInit varDeclList` | epsilon
         private bool CompileVarDeclList(ASTNode parent)
         {
             ASTNode varDeclList = new ASTNode("varDeclList");
-            parent.Add(varDeclList);
 
             if (CompileVarDeclInit(varDeclList))
             {
                 if (CompileVarDeclListTag(varDeclList))
                 {
+                    parent.Add(varDeclList);
                     return true;
                 }
             }
@@ -237,7 +220,7 @@ namespace CCompilerNet.Parser
         private bool CompileVarDeclListTag(ASTNode parent)
         {
             ASTNode varDeclListTag = new ASTNode("varDeclListTag");
-            parent.Add(varDeclListTag);
+            //parent.Add(varDeclListTag);
 
             if (!IsValueEquals(","))
             {
@@ -251,6 +234,7 @@ namespace CCompilerNet.Parser
             {
                 if (CompileVarDeclListTag(varDeclListTag))
                 {
+                    parent.Add(varDeclListTag);
                     return true;
                 }
             }
@@ -262,7 +246,6 @@ namespace CCompilerNet.Parser
         private bool CompileVarDeclInit(ASTNode parent)
         {
             ASTNode varDeclInit = new ASTNode("varDeclInit");
-            parent.Add(varDeclInit);
 
             if (!CompileVarDeclId(varDeclInit))
             {
@@ -272,18 +255,26 @@ namespace CCompilerNet.Parser
             // if didn't encounter :, then it's -> varDeclId
             if (!IsValueEquals(":"))
             {
+                parent.Add(varDeclInit);
                 return true;
             }
 
             EatToken();
 
+            if (!CompileSimpleExp(varDeclInit))
+            {
+                return false;
+            }
+
+            parent.Add(varDeclInit);
             // else it's -> varDeclId : simpleExp
-            return CompileSimpleExp(varDeclInit);
+            return true;
         }
 
         private bool CompileSimpleExp(ASTNode varDeclInit)
         {
-            throw new NotImplementedException();
+            // TODO
+            return true;
         }
 
         // varDeclId -> ID | ID [ NUMCONST ]

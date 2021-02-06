@@ -277,7 +277,7 @@ namespace CCompilerNet
 
         private bool IsEndLine()
         {
-            return _stream.EndOfStream || _pos >= _line.Length;
+            return _pos >= _line.Length;
         }
 
         private bool IsMatch(char symbol)
@@ -292,7 +292,7 @@ namespace CCompilerNet
             // language keywords
 
             List<string> keywords = new List<string>{
-                "auto", "break", "case", "char",
+                "auto", "break", "bool", "case", "char",
                 "const", "continue", "default", "do",
                 "double", "else", "enum", "extern",
                 "float", "for", "goto", "if", "then",

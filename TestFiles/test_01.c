@@ -1,1 +1,3 @@
-int main : 0;
+bool flag;
+char flag;
+int flag;
