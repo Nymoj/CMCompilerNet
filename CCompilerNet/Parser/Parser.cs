@@ -1046,6 +1046,7 @@ namespace CCompilerNet.Parser
 
             if (!IsValueEquals("["))
             {
+                parent.Add(mutable);
                 return true;            //if no [ after id then its not an array
             }
 
