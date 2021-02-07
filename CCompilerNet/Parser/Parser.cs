@@ -585,6 +585,7 @@ namespace CCompilerNet.Parser
                     {
                         parent.Add(expression);
                         EatToken();
+                        EatToken();
                         return true;
                     }
 
@@ -597,6 +598,7 @@ namespace CCompilerNet.Parser
                     expression.Add(new ASTNode("operator", _currentToken));   //add operator to node of the expression
 
                     parent.Add(expression);
+                    EatToken();
                     EatToken();
                     return true;
                 }
@@ -1008,9 +1010,16 @@ namespace CCompilerNet.Parser
         {
             ASTNode factor = new ASTNode("factor");
 
-            if (CompileImmutable(factor) || CompileMutable(factor))
+            if (CompileImmutable(factor))
             {
                 parent.Add(factor);
+                return true;
+            }
+
+            if (CompileMutable(factor))
+            {
+                parent.Add(factor);
+                EatToken();
                 return true;
             }
 
@@ -1063,14 +1072,14 @@ namespace CCompilerNet.Parser
             }
 
             mutable.Add(new ASTNode("ID", _currentToken));
-            EatToken();
+            
 
             if (!IsValueEquals("["))
             {
                 parent.Add(mutable);
                 return true;            //if no [ after id then its not an array
             }
-
+            EatToken();
             EatToken();
 
             if (!CompileExp(mutable))  //must be an expression between the []
