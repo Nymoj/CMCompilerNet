@@ -325,7 +325,7 @@ namespace CCompilerNet.Parser
                 typeSpec = new ASTNode("typeSpec", _currentToken);
                 parent.Add(typeSpec);
 
-                EatToken();
+                //EatToken();
                 return true;
             }
             return false;
@@ -336,7 +336,11 @@ namespace CCompilerNet.Parser
         {
             ASTNode funDecl = new ASTNode("funDecl");
 
-            CompileTypeSpec(funDecl);
+            if (CompileTypeSpec(funDecl))
+            {
+                // typespec doesn't eat tokens, so here we do it manually
+                EatToken();
+            }
 
             if (!IsTokenTypeEquals(TokenType.ID))
             {
@@ -365,24 +369,27 @@ namespace CCompilerNet.Parser
 
             EatToken();
 
-            parent.Add(funDecl);
-            return CompileStmt(funDecl);
-        }
+            if (!CompileStmt(funDecl))
+            {
+                return false;
+            }
 
-        private bool CompileStmt(ASTNode parent)
-        {
-            throw new NotImplementedException();
+            parent.Add(funDecl);
+
+            return true;
         }
 
         // parms -> parmList | epsilon
         private bool CompileParms(ASTNode parent)
         {
-            ASTNode parms = new ASTNode("parms");
+            /*ASTNode parms = new ASTNode("parms");
             // no parameters
             if (IsValueEquals(")"))
             {
                 return true;
             }
+
+            EatToken();
 
             if (!CompileParmList(parms))
             {
@@ -390,6 +397,16 @@ namespace CCompilerNet.Parser
             }
 
             parms.Add(parms);
+            return true;*/
+
+            ASTNode parms = new ASTNode("parms");
+
+            if (!CompileParmList(parms))
+            {
+                return true;
+            }
+
+            parent.Add(parms);
             return true;
         }
 
@@ -450,6 +467,10 @@ namespace CCompilerNet.Parser
             {
                 return false;
             }
+            
+            // if typespec returned true, type token must be eaten
+            // typespec doesn't eat tokens
+            EatToken();
 
             if (!CompileParmIdList(parmTypeList))
             {
@@ -487,7 +508,7 @@ namespace CCompilerNet.Parser
             ASTNode parmIdListTag = new ASTNode("parmIdListTag");
             
             // epsilon
-            if (!IsValueEquals(";"))
+            if (!IsValueEquals(","))
             {
                 return true;
             }
@@ -581,7 +602,7 @@ namespace CCompilerNet.Parser
                 }
 
             }
-            else if (CompileSimpleExp(expression)) //checks if its a simple expression
+            if (CompileSimpleExp(expression)) //checks if its a simple expression
             {
                 parent.Add(expression);
                 return true;
@@ -1185,6 +1206,360 @@ namespace CCompilerNet.Parser
 
         #endregion
 
+        #region Statements
 
+        // stmt -> expStmt | compoundStmt | selectStmt | iterStmt | returnStmt | breakStmt
+        private bool CompileStmt(ASTNode parent)
+        {
+            ASTNode stmt = new ASTNode("stmt");
+
+            if (!(
+                CompileExpStmt(stmt)
+                || CompileCompoundStmt(stmt)
+                || CompileSelectStmt(stmt)
+                || CompileIterStmt(stmt)
+                || CompileReturnStmt(stmt)
+                || CompileBreakStmt(stmt)
+                ))
+            {
+                return false;
+            }
+
+            parent.Add(stmt);
+            return true;
+        }
+
+        // expStmt -> exp ; | ;
+        private bool CompileExpStmt(ASTNode parent)
+        {
+            /*ASTNode expStmt = new ASTNode("expStmt");
+
+            // empty expStmt, no need to add to the parent
+            if (IsValueEquals(";"))
+            {
+                EatToken();
+                return true;
+            }
+
+            EatToken();
+
+            if (!CompileExp(expStmt))
+            {
+                return false;
+            }
+
+            if (!IsValueEquals(";"))
+            {
+                return false;
+            }
+
+            EatToken();
+            parent.Add(expStmt);
+            return true;*/
+
+            ASTNode expStmt = new ASTNode("expStmt");
+
+            // epsilon
+            if (!IsValueEquals(";"))
+            {
+                return false;
+            }
+
+            EatToken();
+
+            if (!CompileExp(expStmt))
+            {
+                return false;
+            }
+
+            if (!IsValueEquals(";"))
+            {
+                return false;
+            }
+
+            EatToken();
+            parent.Add(expStmt);
+            return true;
+        }
+
+        // compoundStmt -> { localDecls stmtList }
+        private bool CompileCompoundStmt(ASTNode parent)
+        {
+            ASTNode compoundStmt = new ASTNode("compoundStmt");
+
+            if (!IsValueEquals("{"))
+            {
+                return false;
+            }
+
+            EatToken();
+
+            if (!CompileLocalDecls(compoundStmt))
+            {
+                return false;
+            }
+
+            if (!CompileStmtList(compoundStmt))
+            {
+                return false;
+            }
+
+            if (!IsValueEquals("}"))
+            {
+                return false;
+            }
+
+            EatToken();
+            parent.Add(compoundStmt);
+            return true;
+        }
+
+        // selectStmt -> if simpleExp then stmt | if simpleExp then stmt else stmt
+        private bool CompileSelectStmt(ASTNode parent)
+        {
+            ASTNode selectStmt = new ASTNode("selectStmt");
+
+            if (!IsValueEquals("if"))
+            {
+                return false;
+            }
+
+            EatToken();
+
+            if (!CompileSimpleExp(selectStmt))
+            {
+                return false;
+            }
+
+            if (!IsValueEquals("then"))
+            {
+                return false;
+            }
+
+            EatToken();
+
+            if (!CompileStmt(selectStmt))
+            {
+                return false;
+            }
+
+            if (!IsValueEquals("else"))
+            {
+                EatToken();
+                parent.Add(selectStmt);
+                return true;
+            }
+
+            EatToken();
+
+            if (!CompileStmt(selectStmt))
+            {
+                return false;
+            }
+
+            EatToken();
+            parent.Add(selectStmt);
+            return true;
+        }
+
+        // iterStmt -> while simpleExp do stmt | for ID = iterRange do stmt
+        private bool CompileIterStmt(ASTNode parent)
+        {
+            ASTNode iterStmt = new ASTNode("iterStmt");
+
+            // while simpleExp do stmt
+            if (IsValueEquals("while"))
+            {
+                EatToken();
+
+                if (!CompileSimpleExp(iterStmt))
+                {
+                    return false;
+                }
+                
+                if (!IsValueEquals("do"))
+                {
+                    return false;
+                }
+
+                EatToken();
+
+                if (!CompileStmt(iterStmt))
+                {
+                    return false;
+                }
+
+                return true;
+            }
+
+            // for ID = iterRange do stmt
+            else if (IsValueEquals("for"))
+            {
+                EatToken();
+
+                if (IsTokenTypeEquals(TokenType.ID))
+                {
+                    return false;
+                }
+
+                // storing the id
+                iterStmt.Add(new ASTNode("iterID", _currentToken));
+
+                EatToken();
+
+                if (!CompileIterRange(iterStmt))
+                {
+                    return false;
+                }
+
+                if (!IsValueEquals("do"))
+                {
+                    return false;
+                }
+
+                EatToken();
+
+                if (!CompileStmt(iterStmt))
+                {
+                    return false;
+                }
+
+                parent.Add(iterStmt);
+                return true;
+            }
+
+            // didn't much any pattern in the production rule
+            return false;
+        }
+
+        // iterRange -> simpleExp | simpleExp to simpleExp | simpleExp to simpleExp by simpleExp
+        private bool CompileIterRange(ASTNode parent)
+        {
+            ASTNode iterRange = new ASTNode("iterRange");
+
+            if (!CompileSimpleExp(iterRange))
+            {
+                return false;
+            }
+
+            if (!IsValueEquals("to"))
+            {
+                parent.Add(iterRange);
+                return true;
+            }
+
+            EatToken();
+
+            if (!CompileSimpleExp(iterRange))
+            {
+                return false;
+            }
+
+            if (!IsValueEquals("by"))
+            {
+                parent.Add(iterRange);
+                return true;
+            }
+
+            EatToken();
+
+            if (!CompileSimpleExp(iterRange))
+            {
+                return false;
+            }
+
+            parent.Add(iterRange);
+            return true;
+        }
+
+        // returnStmt -> return ; | return exp ;
+        private bool CompileReturnStmt(ASTNode parent)
+        {
+            ASTNode returnStmt = new ASTNode("returnStmt");
+
+            if (!IsValueEquals("return"))
+            {
+                return false;
+            }
+
+            EatToken();
+
+            if (!IsValueEquals(";"))
+            {
+                if (!CompileExp(returnStmt))
+                {
+                    return false;
+                }
+
+                if (!IsValueEquals(";"))
+                {
+                    return false;
+                }
+
+                EatToken();
+
+                parent.Add(returnStmt);
+                return true;
+            }
+
+            EatToken();
+
+            parent.Add(returnStmt);
+            return true;
+        }
+
+        private bool CompileBreakStmt(ASTNode parent)
+        {
+            ASTNode breakStmt = null;
+
+            if (!IsValueEquals("break"))
+            {
+                return false;
+            }
+
+            breakStmt = new ASTNode("breakStmt", _currentToken);
+            EatToken();
+
+            if (!IsValueEquals(";"))
+            {
+                return false;
+            }
+            EatToken();
+
+            parent.Add(breakStmt);
+            return true;
+        }
+
+        // stmtList -> stmtList stmt | epsilon
+        private bool CompileStmtList(ASTNode parent)
+        {
+            ASTNode stmtList = new ASTNode("stmtList");
+
+            while (CompileStmt(stmtList)) ;
+
+            if (stmtList.Children.Count() > 0)
+            {
+                parent.Add(stmtList);
+            }
+
+            return true;
+        }
+
+        // localDecls -> localDecls scopedVarDecl | epsilon
+        private bool CompileLocalDecls(ASTNode parent)
+        {
+            ASTNode localDecls = new ASTNode("localDecls");
+
+            while (CompileScopedVarDecl(localDecls)) ;
+
+            if (localDecls.Children.Count() > 0)
+            {
+                parent.Add(localDecls);
+            }
+
+            return true;
+        }
+
+        #endregion
     }
 }

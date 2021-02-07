@@ -14,16 +14,13 @@ namespace CCompilerNet.Parser
         public string Tag { get; set; }
         public List<ASTNode> Children { get; private set; }
         public Token Token { get; set; }
-        //public int Level { get; set; }
-        private int _level;
                                                                                     
         /* Constructors */
-        public ASTNode(string tag, Token token = null, int level = 0)
+        public ASTNode(string tag, Token token = null)
         {
             Children = new List<ASTNode>();
             Tag = tag;
             Token = token;
-            _level = level;
         }
 
         /* Public Methods */
@@ -33,7 +30,6 @@ namespace CCompilerNet.Parser
         /// <param name="node">Node to be added</param>
         public void Add(ASTNode node)
         {
-            //node.Level = Level + 1;
             Children.Add(node);
         }
 

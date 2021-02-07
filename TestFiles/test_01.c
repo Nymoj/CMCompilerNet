@@ -1,3 +1,1 @@
-bool flag;
-char flag;
-int flag;
+int max(int a, b) { if a > b then return a; else return b; }
