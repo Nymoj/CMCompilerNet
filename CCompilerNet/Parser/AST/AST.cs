@@ -19,7 +19,7 @@ namespace CCompilerNet.Parser
 
         public override string ToString()
         {
-            return ASTNode.Print(Root, 0);
+            return ASTNode.Print(Root, 0, true);
         }
     }
 }

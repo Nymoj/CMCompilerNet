@@ -37,27 +37,42 @@ namespace CCompilerNet.Parser
             Children.Add(node);
         }
 
-        public static string Print(ASTNode node, int level)
+        public static string Print(ASTNode node, int level, bool print)
         {
             string tabs = new string('\t', level);
 
             string result = "";
 
-            result += tabs + "<" + node.Tag + ">\n";
+            if (print || node.Token != null)
 
-            if (node.Token != null)
             {
-                result += tabs + '\t' + node.Token.ToString() + '\n';
+                result += tabs + "<" + node.Tag + ">\n";
+
+                if (node.Token != null)
+                {
+                    result += tabs + '\t' + node.Token.ToString() + '\n';
+                }
+
             }
 
             foreach (ASTNode child in node.Children)
             {
-                result += ASTNode.Print(child, level + 1);
+                if (child.Children.Count > 1 || child.Token != null)
+                {
+                    result += ASTNode.Print(child, level + 1, true);
+                }
+                else
+                {
+                    result += ASTNode.Print(child, level, false);
+                }
             }
 
-            result += tabs + "</" + node.Tag + ">\n";
-
-            return result;
+            if (print || node.Token != null)
+            {
+                result += tabs + "</" + node.Tag + ">\n";
+            }
+                return result;
+            
         }
     }
 }
