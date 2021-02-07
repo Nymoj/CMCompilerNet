@@ -193,6 +193,7 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
+            EatToken();
             parent.Add(scopedVarDecl);
             return true;
         }
@@ -1366,7 +1367,6 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
-            EatToken();
             parent.Add(selectStmt);
             return true;
         }

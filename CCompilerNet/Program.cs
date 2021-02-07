@@ -14,7 +14,7 @@ namespace CCompilerNet
     {
         static void Main(string[] args)
         {
-            StreamWriter outputFile = new StreamWriter("D:/output.xml");
+            StreamWriter outputFile = new StreamWriter("E:/output.xml");
             Parser.Parser parser = new Parser.Parser(args[0]);
             parser.CompileProgram();
 
