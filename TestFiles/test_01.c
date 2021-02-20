@@ -1,1 +1,6 @@
-int max(int a, b) { if a > b then return a; else return b; }
+int a : 10;
+int main()
+{
+	return 0;
+}
+int b : 666;

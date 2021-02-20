@@ -14,11 +14,14 @@ namespace CCompilerNet
         private string _line;
         private bool _commentMode;
         private int _pos;
+        private Queue<Token> _buffer;
+        private bool _isPeeking;
 
         public Lexer(string path)
         {
             _stream = new StreamReader(path);
-
+            _buffer = new Queue<Token>();
+            _isPeeking = false;
             // initializing the first line
             _line = _stream.ReadLine();
             _pos = 0;
@@ -29,6 +32,11 @@ namespace CCompilerNet
         {
             Token token = null;
             int startPos = 0;
+
+            if (!_isPeeking && _buffer.Count > 0)
+            {
+                return _buffer.Dequeue();
+            }
 
             // Skip white spaces before next token
             SkipWhiteSpace();
@@ -85,19 +93,28 @@ namespace CCompilerNet
             return token;
         }
 
-        public Token Peek()
+        public Token Peek(int lookAheads)
         {
-            int originalPos = _pos;
-            string originalLine = _line;
+            Token token;
 
-            Token token = GetNextToken();
+            if (lookAheads <= _buffer.Count)
+            {
+                return _buffer.ElementAt(lookAheads - 1);
+            }
 
-            // Check if the line was updated
-            // If not, set _pos to its original state
-            // If yes, set _pos to the start of the line
-            _pos = _line != originalLine ? 0 : originalPos;
+            _isPeeking = true;
 
-            return token;
+            for (int i = 0; i < lookAheads; i++)
+            {
+                token = GetNextToken();
+                if (token != null)
+                {
+                    _buffer.Enqueue(token);
+                }
+            }
+
+            _isPeeking = false;
+            return _buffer.Count == 0 ? null : _buffer.Last();
         }
 
         private string CutTokenFromLine(int start)

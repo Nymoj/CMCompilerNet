@@ -133,7 +133,7 @@ namespace CCompilerNet.Parser
         {
             ASTNode decl = new ASTNode("decl");
 
-            if (!CompileVarDecl(decl) && !CompileFunDecl(decl))
+            if (!CompileFunDecl(decl) && !CompileVarDecl(decl))
             {
                 return false;
             }
@@ -144,6 +144,8 @@ namespace CCompilerNet.Parser
         #endregion
 
         #region Variable Declarations
+
+        // varDecl -> typeSpec varDeclList ;
         private bool CompileVarDecl(ASTNode parent)
         {
             ASTNode varDecl = new ASTNode("varDecl");
@@ -152,6 +154,8 @@ namespace CCompilerNet.Parser
             {
                 return false;
             }
+
+            EatToken();
 
             if (!CompileVarDeclList(varDecl))
             {
@@ -336,6 +340,21 @@ namespace CCompilerNet.Parser
         private bool CompileFunDecl(ASTNode parent)
         {
             ASTNode funDecl = new ASTNode("funDecl");
+
+            if (IsValueEquals("int") || IsValueEquals("bool") || IsValueEquals("char"))
+            {
+                if (_lexer.Peek(2) == null || _lexer.Peek(2).Value != "(")
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                if (_lexer.Peek(1) == null || _lexer.Peek(1).Value != "(")
+                {
+                    return false;
+                }
+            }
 
             if (CompileTypeSpec(funDecl))
             {
@@ -1110,7 +1129,7 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
-            if (_lexer.Peek().Value != "(")
+            if (_lexer.Peek(1).Value != "(")
             {
                 return false;
             }
