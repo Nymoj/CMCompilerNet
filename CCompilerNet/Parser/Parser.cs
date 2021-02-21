@@ -576,6 +576,8 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
+            EatToken();
+
             parent.Add(parmId);
             return true;
         }

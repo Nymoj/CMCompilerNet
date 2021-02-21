@@ -14,7 +14,7 @@ namespace CCompilerNet
     {
         static void Main(string[] args)
         {
-            StreamWriter outputFile = new StreamWriter("E:/output.xml");
+            StreamWriter outputFile = new StreamWriter("output.xml");
             Parser.Parser parser = new Parser.Parser(args[0]);
             parser.CompileProgram();
 
@@ -22,21 +22,6 @@ namespace CCompilerNet
 
             outputFile.Write(ast?.ToString());
             outputFile.Close();
-
-            /*if (args.Count() < 1)
-            {
-                Console.WriteLine("No input file provided");
-                return;
-            }
-
-            Lexer lex = new Lexer(args[0]);
-
-            Console.WriteLine("------" + lex.Peek(3) + "----------");
-
-            while (lex.Peek(1) != null)
-            {
-                Console.WriteLine(lex.GetNextToken());
-            }*/
         }
     }
 }
