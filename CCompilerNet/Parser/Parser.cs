@@ -187,6 +187,8 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
+            EatToken();
+
             if (!CompileVarDeclList(scopedVarDecl))
             {
                 return false;
@@ -602,12 +604,11 @@ namespace CCompilerNet.Parser
                 if (mutables.Contains(_currentToken.Value)) // checks if mutable -> exp
                 {
                     expression.Add(new ASTNode("operator", _currentToken)); //add operator to node of the expression
+                    EatToken();
 
                     if (CompileExp(expression))
                     {
                         parent.Add(expression);
-                        EatToken();
-                        EatToken();
                         return true;
                     }
 
@@ -1098,6 +1099,7 @@ namespace CCompilerNet.Parser
 
             if (!IsValueEquals("["))
             {
+                EatToken();
                 parent.Add(mutable);
                 return true;            //if no [ after id then its not an array
             }
@@ -1221,7 +1223,7 @@ namespace CCompilerNet.Parser
         {
             ASTNode constant = new ASTNode("constant");
 
-            if (!IsTokenTypeEquals(TokenType.Const) & !IsTokenTypeEquals(TokenType.StringLiteral))
+            if (!IsTokenTypeEquals(TokenType.Const) && !IsTokenTypeEquals(TokenType.StringLiteral))
             {
                 return false;
             }
@@ -1265,7 +1267,7 @@ namespace CCompilerNet.Parser
         {
             /*ASTNode expStmt = new ASTNode("expStmt");
 
-            // empty expStmt, no need to add to the parent
+            // epsilon
             if (IsValueEquals(";"))
             {
                 EatToken();
@@ -1287,18 +1289,15 @@ namespace CCompilerNet.Parser
             EatToken();
             parent.Add(expStmt);
             return true;*/
-
             ASTNode expStmt = new ASTNode("expStmt");
 
-            // epsilon
-            if (!IsValueEquals(";"))
+            if (IsValueEquals(";"))
             {
-                return false;
+                EatToken();
+                return true;
             }
 
-            EatToken();
-
-            if (!CompileExp(expStmt))
+            if (!CompileExp(expStmt) && !IsValueEquals(";"))
             {
                 return false;
             }
