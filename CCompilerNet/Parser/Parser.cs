@@ -404,23 +404,6 @@ namespace CCompilerNet.Parser
         // parms -> parmList | epsilon
         private bool CompileParms(ASTNode parent)
         {
-            /*ASTNode parms = new ASTNode("parms");
-            // no parameters
-            if (IsValueEquals(")"))
-            {
-                return true;
-            }
-
-            EatToken();
-
-            if (!CompileParmList(parms))
-            {
-                return false;
-            }
-
-            parms.Add(parms);
-            return true;*/
-
             ASTNode parms = new ASTNode("parms");
 
             if (!CompileParmList(parms))
@@ -1042,7 +1025,6 @@ namespace CCompilerNet.Parser
             if (CompileMutable(factor))
             {
                 parent.Add(factor);
-                EatToken();
                 return true;
             }
 
@@ -1095,15 +1077,14 @@ namespace CCompilerNet.Parser
             }
 
             mutable.Add(new ASTNode("ID", _currentToken));
-            
+            EatToken();
 
             if (!IsValueEquals("["))
             {
-                EatToken();
                 parent.Add(mutable);
                 return true;            //if no [ after id then its not an array
             }
-            EatToken();
+
             EatToken();
 
             if (!CompileExp(mutable))  //must be an expression between the []

@@ -1,6 +1,4 @@
-int a : 10;
 int main()
 {
-	return 0;
+	goat = hog[2] = 3 ** cat;
 }
-int b : 666;
