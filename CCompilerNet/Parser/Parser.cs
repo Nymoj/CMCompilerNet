@@ -1614,14 +1614,27 @@ namespace CCompilerNet.Parser
                 Console.WriteLine("push " + exp.Token.Value);
             }
 
+            if (exp.Tag == "operator")
+            {
+                Console.WriteLine(exp.Token.Value);
+            }
+
             if (exp.Children.Count > 1)
             {
                 if (exp.Tag == "mulExpression" || exp.Tag == "sumExpression")
                 {
                     codeWriteExp(exp.Children[0]);    //push 1st exp
-                    codeWriteExp(exp.Children[1].Children[0]);        //push 2nd exp
 
-                    Console.WriteLine(exp.Children[1].Children[1].Children[0].Token.Value); //push operator
+                    codeWriteExp(exp.Children[1]);        //code generation of tag
+
+                }
+
+                if (exp.Tag == "mulExpressionTag" || exp.Tag == "sumExpressionTag")
+                {
+                    foreach (ASTNode child in exp.Children)
+                    {
+                        codeWriteExp(child);
+                    }
                 }
 
                 if (exp.Tag == "unaryExp")
@@ -1635,7 +1648,7 @@ namespace CCompilerNet.Parser
                 {
                     if (exp.Children[1].Children[0].Children.Any()) //checks if argument list is empty
                     {
-                        codeWriteExp(exp.Children[1].Children[0].Children[0]);
+                        codeWriteExp(exp.Children[1].Children[0].Children[0]); //first argument of function
 
                         if (exp.Children[1].Children[0].Children.Count > 1)     //checks if theres more than 1 arguments resulting in arg tag
                         {
