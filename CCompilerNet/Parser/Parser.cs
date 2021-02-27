@@ -576,39 +576,41 @@ namespace CCompilerNet.Parser
         {
             ASTNode expression = new ASTNode("expression");
             List<string> mutables = new List<string>{ "=", "+=", "-=", "*=", "/=" };   //list of operators that lead to another expression
-
-            if (CompileMutable(expression))    //checks if its a mutable expression
+            List<string> ops = new List<string> { "++", "--" };
+            if (_lexer.Peek(1) != null)    //checks if its a mutable expression
             {
-                if (_currentToken == null)
+                if ((mutables.Contains(_lexer.Peek(1).Value) || ops.Contains(_lexer.Peek(1).Value)) && CompileMutable(expression))
                 {
-                    return false;
-                }
-
-                if (mutables.Contains(_currentToken.Value)) // checks if mutable -> exp
-                {
-                    expression.Add(new ASTNode("operator", _currentToken)); //add operator to node of the expression
-                    EatToken();
-
-                    if (CompileExp(expression))
+                    if (_currentToken == null)
                     {
-                        parent.Add(expression);
-                        return true;
+                        return false;
                     }
 
-                    return false;
+                    if (mutables.Contains(_currentToken.Value)) // checks if mutable -> exp
+                    {
+                        expression.Add(new ASTNode("operator", _currentToken)); //add operator to node of the expression
+                        EatToken();
 
+                        if (CompileExp(expression))
+                        {
+                            parent.Add(expression);
+                            return true;
+                        }
+
+                        return false;
+
+                    }
+
+                    if (ops.Contains(_currentToken.Value))
+                    {
+                        expression.Add(new ASTNode("operator", _currentToken));   //add operator to node of the expression
+
+                        parent.Add(expression);
+                        EatToken();
+                        return true;
+                    }
                 }
-
-                if (_currentToken.Value == "++" || _currentToken.Value == "--")
-                {
-                    expression.Add(new ASTNode("operator", _currentToken));   //add operator to node of the expression
-
-                    parent.Add(expression);
-                    EatToken();
-                    EatToken();
-                    return true;
-                }
-
+               
             }
             if (CompileSimpleExp(expression)) //checks if its a simple expression
             {
@@ -882,6 +884,7 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
+            sumExpTag.Children.Reverse();
             parent.Add(sumExpTag);
 
             return true; 
@@ -945,6 +948,7 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
+            mulExpTag.Children.Reverse();
             parent.Add(mulExpTag);
             return true;  
         }
@@ -980,6 +984,7 @@ namespace CCompilerNet.Parser
                     return false;
                 }
 
+                unaryExp.Children.Reverse();
                 parent.Add(unaryExp);
                 return true;
             }
@@ -1077,6 +1082,7 @@ namespace CCompilerNet.Parser
             }
 
             mutable.Add(new ASTNode("ID", _currentToken));
+
             EatToken();
 
             if (!IsValueEquals("["))
@@ -1084,7 +1090,7 @@ namespace CCompilerNet.Parser
                 parent.Add(mutable);
                 return true;            //if no [ after id then its not an array
             }
-
+            
             EatToken();
 
             if (!CompileExp(mutable))  //must be an expression between the []
@@ -1118,6 +1124,8 @@ namespace CCompilerNet.Parser
             {
                 return false;
             }
+
+            call.Add(new ASTNode("ID", _currentToken));
 
             EatToken();
             EatToken();
@@ -1282,6 +1290,8 @@ namespace CCompilerNet.Parser
             {
                 return false;
             }
+
+            codeWriteExp(expStmt.Children[0]);
 
             if (!IsValueEquals(";"))
             {
@@ -1568,6 +1578,81 @@ namespace CCompilerNet.Parser
             }
 
             return true;
+        }
+
+        #endregion
+
+        #region CodeGen
+
+        public void codeWriteExp(ASTNode exp)
+        {
+            /*if (exp.Children.Any())
+            {
+                foreach (ASTNode child in exp.Children)
+                {
+                    codeWriteExp(child);
+                }
+            }
+
+            if (exp.Token == null)
+            {
+                return false;
+            }
+           if (exp.Token.Type != TokenType.Operator)
+            {
+                Console.WriteLine("push " + exp.Token.Value);
+                return true;
+            }
+            else
+            {
+                Console.WriteLine(exp.Token.Value);
+                return true;
+            }*/
+
+            if (exp.Tag == "const" || exp.Tag == "ID")
+            {
+                Console.WriteLine("push " + exp.Token.Value);
+            }
+
+            if (exp.Children.Count > 1)
+            {
+                if (exp.Tag == "mulExpression" || exp.Tag == "sumExpression")
+                {
+                    codeWriteExp(exp.Children[0]);    //push 1st exp
+                    codeWriteExp(exp.Children[1].Children[0]);        //push 2nd exp
+
+                    Console.WriteLine(exp.Children[1].Children[1].Children[0].Token.Value); //push operator
+                }
+
+                if (exp.Tag == "unaryExp")
+                {
+                    codeWriteExp(exp.Children[0]); //push exp
+
+                    Console.WriteLine(exp.Children[1].Children[0].Token.Value); //push operator
+                }
+
+                if (exp.Tag == "call")
+                {
+                    if (exp.Children[1].Children[0].Children.Any()) //checks if argument list is empty
+                    {
+                        codeWriteExp(exp.Children[1].Children[0].Children[0]);
+
+                        if (exp.Children[1].Children[0].Children.Count > 1)     //checks if theres more than 1 arguments resulting in arg tag
+                        {
+                            foreach (ASTNode child in exp.Children[1].Children[0].Children[1].Children) //goes over all arg list tag members
+                            {
+                                codeWriteExp(child);
+                            }
+                        }
+                    }
+                    Console.WriteLine("call " + exp.Children[0].Token.Value);  //call func
+                }
+            }
+
+            if (exp.Children.Count == 1)
+            {
+                codeWriteExp(exp.Children[0]);     //move over to next member
+            }
         }
 
         #endregion
