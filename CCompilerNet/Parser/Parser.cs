@@ -179,7 +179,8 @@ namespace CCompilerNet.Parser
 
             if (IsValueEquals("static"))
             {
-                scopedVarDecl.Add(new ASTNode("static", _currentToken));
+                scopedVarDecl.Add(new ASTNode(_currentToken));
+                EatToken();
             }
 
             if (!CompileTypeSpec(scopedVarDecl))
@@ -309,7 +310,7 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
-            varDeclId.Add(new ASTNode("numconst", _currentToken));
+            varDeclId.Add(new ASTNode(_currentToken));
             EatToken();
 
             if (!IsValueEquals("]"))
@@ -369,7 +370,7 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
-            funDecl.Add(new ASTNode("id", _currentToken));
+            funDecl.Add(new ASTNode(_currentToken));
             EatToken();
 
             if (!IsValueEquals("("))
@@ -554,6 +555,7 @@ namespace CCompilerNet.Parser
                 return true;
             }
 
+            parmId.Add(new ASTNode(_currentToken));
             EatToken();
 
             if (!IsValueEquals("]"))
@@ -561,6 +563,7 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
+            parmId.Add(new ASTNode(_currentToken));
             EatToken();
 
             parent.Add(parmId);
@@ -719,6 +722,7 @@ namespace CCompilerNet.Parser
 
             if (IsValueEquals("not"))
             {
+                unaryRelExp.Add(new ASTNode(_currentToken));
                 EatToken();
 
                 if (!CompileUnaryRelExp(unaryRelExp))
@@ -1081,7 +1085,7 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
-            mutable.Add(new ASTNode("ID", _currentToken));
+            mutable.Add(new ASTNode(_currentToken));
 
             EatToken();
 
@@ -1125,7 +1129,7 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
-            call.Add(new ASTNode("ID", _currentToken));
+            call.Add(new ASTNode(_currentToken));
 
             EatToken();
             EatToken();
@@ -1217,7 +1221,7 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
-            constant.Add(new ASTNode("const", _currentToken));
+            constant.Add(new ASTNode(_currentToken));
 
             EatToken();
 
@@ -1254,30 +1258,6 @@ namespace CCompilerNet.Parser
         // expStmt -> exp ; | ;
         private bool CompileExpStmt(ASTNode parent)
         {
-            /*ASTNode expStmt = new ASTNode("expStmt");
-
-            // epsilon
-            if (IsValueEquals(";"))
-            {
-                EatToken();
-                return true;
-            }
-
-            EatToken();
-
-            if (!CompileExp(expStmt))
-            {
-                return false;
-            }
-
-            if (!IsValueEquals(";"))
-            {
-                return false;
-            }
-
-            EatToken();
-            parent.Add(expStmt);
-            return true;*/
             ASTNode expStmt = new ASTNode("expStmt");
 
             if (IsValueEquals(";"))

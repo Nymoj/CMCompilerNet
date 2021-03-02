@@ -23,6 +23,13 @@ namespace CCompilerNet.Parser
             Token = token;
         }
 
+        public ASTNode(Token token)
+        {
+            Children = new List<ASTNode>();
+            Tag = "";
+            Token = token;
+        }
+
         /* Public Methods */
         /// <summary>
         /// Adds a child node to the current node
@@ -38,6 +45,11 @@ namespace CCompilerNet.Parser
             string tabs = new string('\t', level);
 
             string result = "";
+
+            if (node.Tag == "")
+            {
+                return tabs + node.Token + '\n';
+            }
 
             if (print || node.Token != null)
 
@@ -67,8 +79,8 @@ namespace CCompilerNet.Parser
             {
                 result += tabs + "</" + node.Tag + ">\n";
             }
-                return result;
-            
+
+            return result;
         }
     }
 }
