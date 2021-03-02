@@ -591,7 +591,7 @@ namespace CCompilerNet.Parser
 
                     if (mutables.Contains(_currentToken.Value)) // checks if mutable -> exp
                     {
-                        expression.Add(new ASTNode("operator", _currentToken)); //add operator to node of the expression
+                        expression.Add(new ASTNode(_currentToken)); //add operator to node of the expression
                         EatToken();
 
                         if (CompileExp(expression))
@@ -606,7 +606,7 @@ namespace CCompilerNet.Parser
 
                     if (ops.Contains(_currentToken.Value))
                     {
-                        expression.Add(new ASTNode("operator", _currentToken));   //add operator to node of the expression
+                        expression.Add(new ASTNode(_currentToken));   //add operator to node of the expression
 
                         parent.Add(expression);
                         EatToken();
@@ -777,7 +777,7 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
-            relop.Add(new ASTNode("operator", _currentToken));    //add the operator to the relop node
+            relop.Add(new ASTNode(_currentToken));    //add the operator to the relop node
             EatToken();  //move on to the next token after adding it
 
             parent.Add(relop);  //add to parent node
@@ -904,7 +904,7 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
-            sumOp.Add(new ASTNode("operator", _currentToken));
+            sumOp.Add(new ASTNode(_currentToken));
 
             EatToken();
 
@@ -967,7 +967,7 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
-            mulOp.Add(new ASTNode("operator", _currentToken));
+            mulOp.Add(new ASTNode(_currentToken));
 
             EatToken();
 
@@ -1011,7 +1011,7 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
-            unaryOp.Add(new ASTNode("operator", _currentToken));
+            unaryOp.Add(new ASTNode(_currentToken));
 
             EatToken();
 
@@ -1369,6 +1369,7 @@ namespace CCompilerNet.Parser
             // while simpleExp do stmt
             if (IsValueEquals("while"))
             {
+                iterStmt.Add(new ASTNode(_currentToken));
                 EatToken();
 
                 if (!CompileSimpleExp(iterStmt))
@@ -1381,6 +1382,7 @@ namespace CCompilerNet.Parser
                     return false;
                 }
 
+                iterStmt.Add(new ASTNode(_currentToken));
                 EatToken();
 
                 if (!CompileStmt(iterStmt))
@@ -1388,21 +1390,29 @@ namespace CCompilerNet.Parser
                     return false;
                 }
 
+                parent.Add(iterStmt);
                 return true;
             }
 
             // for ID = iterRange do stmt
             else if (IsValueEquals("for"))
             {
+                iterStmt.Add(new ASTNode(_currentToken));
                 EatToken();
 
-                if (IsTokenTypeEquals(TokenType.ID))
+                if (!IsTokenTypeEquals(TokenType.ID))
                 {
                     return false;
                 }
 
                 // storing the id
-                iterStmt.Add(new ASTNode("iterID", _currentToken));
+                iterStmt.Add(new ASTNode(_currentToken));
+                EatToken();
+
+                if (!IsValueEquals("="))
+                {
+                    return false;
+                }
 
                 EatToken();
 
@@ -1416,6 +1426,7 @@ namespace CCompilerNet.Parser
                     return false;
                 }
 
+                iterStmt.Add(new ASTNode(_currentToken));
                 EatToken();
 
                 if (!CompileStmt(iterStmt))
