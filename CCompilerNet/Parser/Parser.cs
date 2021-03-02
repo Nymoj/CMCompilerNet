@@ -840,7 +840,7 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
-            minMaxOp.Add(new ASTNode("operator", _currentToken)); //add operator to node
+            minMaxOp.Add(new ASTNode(_currentToken)); //add operator to node
             EatToken(); //move over to next token 
 
             parent.Add(minMaxOp); //add node to parent
@@ -1492,6 +1492,7 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
+            returnStmt.Add(new ASTNode(_currentToken));
             EatToken();
 
             if (!IsValueEquals(";"))
