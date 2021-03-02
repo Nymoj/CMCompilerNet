@@ -1366,7 +1366,6 @@ namespace CCompilerNet.Parser
 
             if (!IsValueEquals("else"))
             {
-                EatToken();
                 parent.Add(selectStmt);
                 return true;
             }

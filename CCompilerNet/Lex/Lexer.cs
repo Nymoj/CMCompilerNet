@@ -355,6 +355,15 @@ namespace CCompilerNet
         private bool IsId()
         {
             // (LETTER | UNDERSCORE) LETTER_OR_DIGIT*
+            int originalPos = _pos;
+
+            if (IsBooleanConst())
+            {
+                _pos = originalPos;
+                return false;
+            }
+
+            _pos = originalPos;
 
             if (!IsLetter())
             {
