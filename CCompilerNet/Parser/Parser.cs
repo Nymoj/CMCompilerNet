@@ -580,41 +580,42 @@ namespace CCompilerNet.Parser
             ASTNode expression = new ASTNode("expression");
             List<string> mutables = new List<string>{ "=", "+=", "-=", "*=", "/=" };   //list of operators that lead to another expression
             List<string> ops = new List<string> { "++", "--" };
-            if (_lexer.Peek(1) != null)    //checks if its a mutable expression
+            
+            if (CompileMutable(expression))
             {
-                if ((mutables.Contains(_lexer.Peek(1).Value) || ops.Contains(_lexer.Peek(1).Value)) && CompileMutable(expression))
+                if (_lexer.Peek(1) == null)
                 {
-                    if (_currentToken == null)
+                    return false;
+                }
+
+                if (mutables.Contains(_lexer.Peek(1).Value)) // checks if mutable -> exp
+                {
+                    EatToken();
+                    expression.Add(new ASTNode(_currentToken)); //add operator to node of the expression
+                    EatToken();
+
+                    if (CompileExp(expression))
                     {
-                        return false;
-                    }
-
-                    if (mutables.Contains(_currentToken.Value)) // checks if mutable -> exp
-                    {
-                        expression.Add(new ASTNode(_currentToken)); //add operator to node of the expression
-                        EatToken();
-
-                        if (CompileExp(expression))
-                        {
-                            parent.Add(expression);
-                            return true;
-                        }
-
-                        return false;
-
-                    }
-
-                    if (ops.Contains(_currentToken.Value))
-                    {
-                        expression.Add(new ASTNode(_currentToken));   //add operator to node of the expression
-
                         parent.Add(expression);
-                        EatToken();
                         return true;
                     }
+
+                    return false;
+
                 }
+
+                if (ops.Contains(_currentToken.Value))
+                {
+                    expression.Add(new ASTNode(_currentToken));   //add operator to node of the expression
+
+                    parent.Add(expression);
+                    EatToken();
+                    return true;
+                }
+                
                
             }
+            expression.Children.Clear();
             if (CompileSimpleExp(expression)) //checks if its a simple expression
             {
                 parent.Add(expression);
@@ -897,7 +898,7 @@ namespace CCompilerNet.Parser
         //sumOp -> + | -
         private bool CompileSumOp(ASTNode parent)
         {
-            ASTNode sumOp = new ASTNode("sumOperator");
+            ASTNode sumOp = new ASTNode("operator");
 
             if (_currentToken.Value != "+" && _currentToken.Value != "-")
             {
@@ -960,7 +961,7 @@ namespace CCompilerNet.Parser
         //mulOp -> * | / | %
         private bool CompileMulOp(ASTNode parent)
         {
-            ASTNode mulOp = new ASTNode("mulOperator");
+            ASTNode mulOp = new ASTNode("operator");
 
             if (_currentToken.Value != "*" && _currentToken.Value != "/" && _currentToken.Value != "%")
             {
@@ -1033,6 +1034,7 @@ namespace CCompilerNet.Parser
 
             if (CompileMutable(factor))
             {
+                EatToken();
                 parent.Add(factor);
                 return true;
             }
@@ -1087,14 +1089,15 @@ namespace CCompilerNet.Parser
 
             mutable.Add(new ASTNode(_currentToken));
 
-            EatToken();
+           
 
-            if (!IsValueEquals("["))
+            if (_lexer.Peek(1).Value != "[")
             {
                 parent.Add(mutable);
                 return true;            //if no [ after id then its not an array
             }
-            
+
+            EatToken();
             EatToken();
 
             if (!CompileExp(mutable))  //must be an expression between the []
@@ -1600,14 +1603,14 @@ namespace CCompilerNet.Parser
                 return true;
             }*/
 
-            if (exp.Tag == "const" || exp.Tag == "ID")
+            if (exp.Tag == "constant" || exp.Tag == "mutable")
             {
-                Console.WriteLine("push " + exp.Token.Value);
+                Console.WriteLine("push " + exp.Children[0].Token.Value);
             }
 
             if (exp.Tag == "operator")
             {
-                Console.WriteLine(exp.Token.Value);
+                Console.WriteLine(exp.Children[0].Token.Value);
             }
 
             if (exp.Children.Count > 1)
