@@ -22,66 +22,29 @@ namespace CCompilerNet.CodeGen
         public VMWriter()
         {
             _domain = AppDomain.CurrentDomain;
-            _asmBuilder = _domain.DefineDynamicAssembly(new AssemblyName("MyASM"), AssemblyBuilderAccess.Save);
-            _moduleBuilder = _asmBuilder.DefineDynamicModule("MyModule");
-            // defining main static class Program
-            _typeBuilder = _moduleBuilder.DefineType(
-                "Program",
-                TypeAttributes.Class | TypeAttributes.Public
-                );
-
-            // defining Main function
-            _methodBuilder = _typeBuilder.DefineMethod("Main",
-                MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig,
-                typeof(int),
-                new Type[] { typeof(string) }
-            );
-
-            _mainIL = _methodBuilder.GetILGenerator();
-
-            _mainIL.Emit(OpCodes.Ret);
-
-            _typeBuilder.CreateType();
-            _asmBuilder.SetEntryPoint(_methodBuilder, PEFileKinds.ConsoleApplication);
-            File.Delete("test.exe");
-            _asmBuilder.Save("test.exe");
-
-            Console.WriteLine("Created successfuly!");
-            /*const string ASSEMBLY_NAME = "IL_Test";
-            AssemblyBuilder assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(
-                new AssemblyName(ASSEMBLY_NAME), AssemblyBuilderAccess.Save);
-            ModuleBuilder moduleBuilder = assemblyBuilder.DefineDynamicModule(
-                ASSEMBLY_NAME, "test.exe");
-            TypeBuilder typeBuilder = moduleBuilder.DefineType("Program",
+            _asmBuilder = _domain.DefineDynamicAssembly(
+                new AssemblyName("MyASM"), AssemblyBuilderAccess.Save);
+            _moduleBuilder = _asmBuilder.DefineDynamicModule(
+                "MyASM", "output.exe");
+            _typeBuilder = _moduleBuilder.DefineType("Program",
                 TypeAttributes.Class | TypeAttributes.Public);
-            MethodBuilder methodBuilder = typeBuilder.DefineMethod(
+            _methodBuilder = _typeBuilder.DefineMethod(
                 "Main", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static,
                 typeof(void), new Type[] { typeof(string[]) });
-            ILGenerator gen = methodBuilder.GetILGenerator();
-
-            gen.Emit(OpCodes.Ldstr, "Hello, World!");
-            gen.Emit(OpCodes.Call, typeof(Console).GetMethod("WriteLine", new Type[] { typeof(string) }));
-            gen.Emit(OpCodes.Ldc_I4_1);
-            gen.Emit(OpCodes.Call, typeof(Console).GetMethod("ReadKey", new Type[] { typeof(bool) }));
-            gen.Emit(OpCodes.Pop);
-            typeBuilder.CreateType();
-            assemblyBuilder.SetEntryPoint(methodBuilder, PEFileKinds.ConsoleApplication);
-            File.Delete("test.exe");
-            assemblyBuilder.Save("test.exe");*/
+            _mainIL = _methodBuilder.GetILGenerator();
+            
         }
 
         public void GenerateCode(AST ast, string outputPath)
         {
-            //CodeWriteExp(ast.Root);
-
+            CodeWriteExp(ast.Root);
+            _mainIL.Emit(OpCodes.Ldc_I4, 99);
             _mainIL.Emit(OpCodes.Ret);
 
             _typeBuilder.CreateType();
             _asmBuilder.SetEntryPoint(_methodBuilder, PEFileKinds.ConsoleApplication);
-            File.Delete("test.exe");
-            _asmBuilder.Save("test.exe");
-
-            Console.WriteLine("Created successfuly!");
+            File.Delete("output.exe");
+            _asmBuilder.Save("output.exe");
         }
 
         private void Push(string value)

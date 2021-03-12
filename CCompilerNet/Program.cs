@@ -22,7 +22,7 @@ namespace CCompilerNet
 
             VMWriter vm = new VMWriter();
 
-            //vm.GenerateCode(ast, "outputcode.exe");
+            vm.GenerateCode(ast, "outputcode.exe");
 
             //outputFile.Write(ast?.ToString());
             //outputFile.Close();
