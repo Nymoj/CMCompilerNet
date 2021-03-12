@@ -20,6 +20,5 @@ int ant(int bat, cat[]; bool dog, elk; int fox; char gnu)
 	yurt = zev;
 	yurt[3] = zev[? *zev];
 	return (fox + bat * cat[bat]) / -fox;
-
 }
 
