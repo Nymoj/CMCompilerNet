@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
+using CCompilerNet.CodeGen;
 using CCompilerNet.Lex;
 using CCompilerNet.Parser;
 
@@ -20,8 +20,12 @@ namespace CCompilerNet
 
             AST ast = parser._ast;
 
-            outputFile.Write(ast?.ToString());
-            outputFile.Close();
+            VMWriter vm = new VMWriter();
+
+            //vm.GenerateCode(ast, "outputcode.exe");
+
+            //outputFile.Write(ast?.ToString());
+            //outputFile.Close();
         }
     }
 }
