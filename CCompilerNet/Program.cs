@@ -24,8 +24,8 @@ namespace CCompilerNet
 
             vm.GenerateCode(ast, "outputcode.exe");
 
-            //outputFile.Write(ast?.ToString());
-            //outputFile.Close();
+            outputFile.Write(ast?.ToString());
+            outputFile.Close();
         }
     }
 }

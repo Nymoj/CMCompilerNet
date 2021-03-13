@@ -30,7 +30,7 @@ namespace CCompilerNet.CodeGen
                 TypeAttributes.Class | TypeAttributes.Public);
             _methodBuilder = _typeBuilder.DefineMethod(
                 "Main", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static,
-                typeof(void), new Type[] { typeof(string[]) });
+                typeof(int), new Type[] { typeof(string[]) });
             _mainIL = _methodBuilder.GetILGenerator();
             
         }
@@ -38,9 +38,9 @@ namespace CCompilerNet.CodeGen
         public void GenerateCode(AST ast, string outputPath)
         {
             CodeWriteExp(ast.Root);
-            _mainIL.Emit(OpCodes.Ldc_I4, 99);
+            _mainIL.Emit(OpCodes.Call, typeof(Console).GetMethod("WriteLine", new Type[] { typeof(int) }));
+            _mainIL.Emit(OpCodes.Ldc_I4, 1);
             _mainIL.Emit(OpCodes.Ret);
-
             _typeBuilder.CreateType();
             _asmBuilder.SetEntryPoint(_methodBuilder, PEFileKinds.ConsoleApplication);
             File.Delete("output.exe");
@@ -81,6 +81,20 @@ namespace CCompilerNet.CodeGen
 
             if (exp.Children.Count > 1)
             {
+                if (exp.Tag == "funDecl")
+                {
+                    int i = 0;
+                    foreach (ASTNode child in exp.Children)
+                    {
+                        if (i >= 2)
+                        {
+                            CodeWriteExp(child);
+
+                        }
+                        i++;
+                    }
+
+                }
                 if (exp.Tag == "mulExpression" || exp.Tag == "sumExpression")
                 {
                     CodeWriteExp(exp.Children[0]);    //push 1st exp
