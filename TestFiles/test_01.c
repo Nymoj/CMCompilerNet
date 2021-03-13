@@ -1,4 +1,20 @@
 int calc()
 {
-	3 + (17 * 8 - 5 * 4);
+	4 - 2;
+	2 - 3;
+	{
+		5 + 5;
+	}
+
+	
+}
+
+int func()
+{
+	return 5;
+}
+
+int funky_monke()
+{
+
 }

@@ -37,10 +37,7 @@ namespace CCompilerNet.CodeGen
 
         public void GenerateCode(AST ast, string outputPath)
         {
-            CodeWriteExp(ast.Root);
-            _mainIL.Emit(OpCodes.Call, typeof(Console).GetMethod("WriteLine", new Type[] { typeof(int) }));
-            _mainIL.Emit(OpCodes.Ldc_I4, 1);
-            _mainIL.Emit(OpCodes.Ret);
+            CodeWriteFunc(ast.Root);
             _typeBuilder.CreateType();
             _asmBuilder.SetEntryPoint(_methodBuilder, PEFileKinds.ConsoleApplication);
             File.Delete("output.exe");
@@ -50,6 +47,56 @@ namespace CCompilerNet.CodeGen
         private void Push(string value)
         {
             _mainIL.Emit(OpCodes.Ldc_I4, int.Parse(value));
+        }
+
+        public void CodeWriteFunc(ASTNode ast)
+        {
+            if (ast.Tag == "program")
+            {
+                CodeWriteFunc(ast.Children[0]); //code write of first decList
+
+                if (ast.Children.Count > 1)
+                {
+                    CodeWriteFunc(ast.Children[1]); //code write of decListTag 
+                }
+
+
+            }
+            if (ast.Tag == "declList" || ast.Tag == "declListTag")   //goes over list of all functions and calls every one of them
+            {
+                foreach (ASTNode func in ast.Children)
+                {
+                    CodeWriteFunc(func);
+                }
+            }
+            if (ast.Tag == "funDecl")   //if current node is a function
+            {
+                foreach (ASTNode child in ast.Children)  //goes over each child until it reaches the statements
+                {
+                    if (child.Tag == "stmt")
+                    {
+                        foreach (ASTNode _child in child.Children[0].Children[0].Children)   //goes over all statements
+                        {
+                            if (_child.Children[0].Tag == "ExpStmt")
+                            {
+                                CodeWriteExp(_child);
+
+                            }
+                            if (_child.Children[0].Tag == "returnStmt")
+                            {
+                                CodeWriteExp(_child.Children[0].Children[1]);   //sends the expression after the return
+                                _mainIL.Emit(OpCodes.Ret);
+
+                            }
+
+
+                        }
+
+                    }
+                }
+
+            }
+            
         }
 
         public void CodeWriteExp(ASTNode exp)
@@ -81,20 +128,7 @@ namespace CCompilerNet.CodeGen
 
             if (exp.Children.Count > 1)
             {
-                if (exp.Tag == "funDecl")
-                {
-                    int i = 0;
-                    foreach (ASTNode child in exp.Children)
-                    {
-                        if (i >= 2)
-                        {
-                            CodeWriteExp(child);
-
-                        }
-                        i++;
-                    }
-
-                }
+                
                 if (exp.Tag == "mulExpression" || exp.Tag == "sumExpression")
                 {
                     CodeWriteExp(exp.Children[0]);    //push 1st exp
@@ -134,6 +168,8 @@ namespace CCompilerNet.CodeGen
                     }
                     Console.WriteLine("call " + exp.Children[0].Token.Value);  //call func
                 }
+
+                
             }
 
             if (exp.Children.Count == 1)

@@ -20,9 +20,9 @@ namespace CCompilerNet
 
             AST ast = parser._ast;
 
-            VMWriter vm = new VMWriter();
+           // VMWriter vm = new VMWriter();
 
-            vm.GenerateCode(ast, "outputcode.exe");
+           // vm.GenerateCode(ast, "outputcode.exe");
 
             outputFile.Write(ast?.ToString());
             outputFile.Close();
