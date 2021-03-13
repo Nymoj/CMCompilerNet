@@ -11,10 +11,11 @@ int calc()
 
 int func()
 {
-	return 5;
+
 }
 
 int funky_monke()
 {
+	return 5;
 
 }

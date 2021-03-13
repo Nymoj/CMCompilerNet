@@ -55,25 +55,23 @@ namespace CCompilerNet.CodeGen
             {
                 CodeWriteFunc(ast.Children[0]); //code write of first decList
 
-                if (ast.Children.Count > 1)
-                {
-                    CodeWriteFunc(ast.Children[1]); //code write of decListTag 
-                }
-
-
             }
             if (ast.Tag == "declList" || ast.Tag == "declListTag")   //goes over list of all functions and calls every one of them
             {
-                foreach (ASTNode func in ast.Children)
+                foreach (ASTNode child in ast.Children)
                 {
-                    CodeWriteFunc(func);
+                    CodeWriteFunc(child);
                 }
+            }
+            if (ast.Tag == "decl")
+            {
+                CodeWriteFunc(ast.Children[0]);
             }
             if (ast.Tag == "funDecl")   //if current node is a function
             {
                 foreach (ASTNode child in ast.Children)  //goes over each child until it reaches the statements
                 {
-                    if (child.Tag == "stmt")
+                    if (child.Tag == "stmt" && child.Children[0].Children.Count != 0) //checks if statement and if func isnt empty
                     {
                         foreach (ASTNode _child in child.Children[0].Children[0].Children)   //goes over all statements
                         {
