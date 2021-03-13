@@ -35,21 +35,21 @@ namespace CCompilerNet.CodeGen
             
         }
 
-        public void GenerateCode(AST ast, string outputPath)
+        /*public void GenerateCode(AST ast, string outputPath)
         {
             CodeWriteFunc(ast.Root);
             _typeBuilder.CreateType();
             _asmBuilder.SetEntryPoint(_methodBuilder, PEFileKinds.ConsoleApplication);
             File.Delete("output.exe");
             _asmBuilder.Save("output.exe");
-        }
+        }*/
 
         private void Push(string value)
         {
             _mainIL.Emit(OpCodes.Ldc_I4, int.Parse(value));
         }
 
-        public void CodeWriteFunc(ASTNode ast)
+        /*public void CodeWriteFunc(ASTNode ast)
         {
             if (ast.Tag == "program")
             {
@@ -95,6 +95,15 @@ namespace CCompilerNet.CodeGen
 
             }
             
+        }*/
+
+        public void CodeWriteReturnStmt(ASTNode root)
+        {
+            if (root.Children.Count > 1)
+            {
+                CodeWriteExp(root.Children[1]);   //sends the expression after the return
+            }
+            _mainIL.Emit(OpCodes.Ret);
         }
 
         public void CodeWriteExp(ASTNode exp)

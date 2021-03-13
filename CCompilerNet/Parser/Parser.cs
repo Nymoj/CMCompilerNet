@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
+using CCompilerNet.CodeGen;
 using CCompilerNet.Lex;
 
 namespace CCompilerNet.Parser
@@ -15,6 +15,7 @@ namespace CCompilerNet.Parser
         private Token _currentToken;
         public AST _ast { get; private set; }
         private SymbolTable _st;
+        private VMWriter _vm;
 
         public Parser(Parser other)
         {
@@ -28,6 +29,7 @@ namespace CCompilerNet.Parser
             _lexer = new Lexer(filePath);
             _currentToken = _lexer.GetNextToken();
             _st = new SymbolTable();
+            _vm = new VMWriter();
         }
 
         private void EatToken()
@@ -1335,13 +1337,14 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
-            codeWriteExp(expStmt.Children[0]);
+            //codeWriteExp(expStmt.Children[0]);
 
             if (!IsValueEquals(";"))
             {
                 return false;
             }
 
+            _vm.CodeWriteExp(expStmt);
             EatToken();
             parent.Add(expStmt);
             return true;
@@ -1573,12 +1576,13 @@ namespace CCompilerNet.Parser
 
                 EatToken();
 
+                _vm.CodeWriteReturnStmt(returnStmt);
                 parent.Add(returnStmt);
                 return true;
             }
 
             EatToken();
-
+            _vm.CodeWriteReturnStmt(returnStmt);
             parent.Add(returnStmt);
             return true;
         }

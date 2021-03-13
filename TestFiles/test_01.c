@@ -1,5 +1,4 @@
 int main()
 {
-	static int a, b, c;
-	int d, e, f;
+	return 1 + 2;
 }
