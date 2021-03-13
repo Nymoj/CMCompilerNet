@@ -97,6 +97,14 @@ namespace CCompilerNet.CodeGen
             
         }*/
 
+        public void Save(string path)
+        {
+            _typeBuilder.CreateType();
+            _asmBuilder.SetEntryPoint(_methodBuilder, PEFileKinds.ConsoleApplication);
+            File.Delete(path);
+            _asmBuilder.Save(path);
+        }
+
         public void CodeWriteReturnStmt(ASTNode root)
         {
             if (root.Children.Count > 1)

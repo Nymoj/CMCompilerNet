@@ -19,6 +19,7 @@ namespace CCompilerNet
             parser.CompileProgram();
 
             AST ast = parser._ast;
+            parser._vm.Save("output.exe");
 
             //VMWriter vm = new VMWriter();
 

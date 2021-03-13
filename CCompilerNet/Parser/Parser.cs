@@ -15,7 +15,7 @@ namespace CCompilerNet.Parser
         private Token _currentToken;
         public AST _ast { get; private set; }
         private SymbolTable _st;
-        private VMWriter _vm;
+        public VMWriter _vm { get; }
 
         public Parser(Parser other)
         {
