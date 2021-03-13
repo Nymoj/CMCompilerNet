@@ -14,6 +14,7 @@ namespace CCompilerNet.Parser
         private Lexer _lexer;
         private Token _currentToken;
         public AST _ast { get; private set; }
+        private SymbolTable _st;
 
         public Parser(Parser other)
         {
@@ -26,6 +27,7 @@ namespace CCompilerNet.Parser
             _ast = null;
             _lexer = new Lexer(filePath);
             _currentToken = _lexer.GetNextToken();
+            _st = new SymbolTable();
         }
 
         private void EatToken()
@@ -200,6 +202,8 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
+            AddSymbolsFromScopedVarDecl(scopedVarDecl, _st);
+
             EatToken();
             parent.Add(scopedVarDecl);
             return true;
@@ -242,7 +246,8 @@ namespace CCompilerNet.Parser
             {
                 if (CompileVarDeclListTag(varDeclListTag))
                 {
-                    parent.Add(varDeclListTag);
+                    //parent.Add(varDeclListTag);
+                    parent += varDeclListTag;
                     return true;
                 }
             }
@@ -1715,6 +1720,37 @@ namespace CCompilerNet.Parser
             if (exp.Children.Count == 1)
             {
                 codeWriteExp(exp.Children[0]);     //move over to next member
+            }
+        }
+
+        #endregion
+
+        #region Helpers
+
+        public static void AddSymbolsFromScopedVarDecl(ASTNode root, SymbolTable st)
+        {
+            string type = "";
+            // starting as local kind
+            Kind attribute = Kind.LOCAL;
+            // points to the varDeclInit in children
+            // depends on the number of children, assuming the number is 2 at the beginning
+            int startIndex = 1;
+            
+            // if there is an attribute, the count of children will be 3 (static, typeSpec varDeclList)
+            if (root.Children.Count > 2)
+            {
+                // changing the start index to 2 because the number of children is 3
+                startIndex = 2;
+                // changing the attribute to be static
+                attribute = Kind.STATIC;
+            }
+
+            type = root.Children[startIndex - 1].Token.Value;
+
+            // iterating through the IDs and adding them to the symbol table
+            foreach(ASTNode child in root.Children[startIndex].Children)
+            {
+                st.Define(child.Children[0].Token.Value, type, attribute);
             }
         }
 

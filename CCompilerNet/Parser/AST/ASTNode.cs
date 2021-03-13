@@ -82,5 +82,15 @@ namespace CCompilerNet.Parser
 
             return result;
         }
+
+        public static ASTNode operator +(ASTNode a, ASTNode b)
+        {
+            foreach(ASTNode child in b.Children)
+            {
+                a.Add(child);
+            }
+
+            return a;
+        }
     }
 }
