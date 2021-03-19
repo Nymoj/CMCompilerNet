@@ -161,7 +161,63 @@ namespace CCompilerNet.CodeGen
 
             if (exp.Children.Count > 1)
             {
-                
+
+                if (exp.Children.Count > 2)
+                {
+                    if (exp.Children[1].Token.Value == "=")
+                    {
+                        if (exp.Children[2].Children.Count < 2)
+                        {
+                            Symbol symbol = _st.GetSymbol(GetID(exp.Children[0]));
+                            string type;
+
+                            if (symbol == null)
+                            {
+                                Console.Error.WriteLine($"Error: {exp.Children[0].Token.Value} is not declared.");
+                                Environment.Exit(-1);
+                            }
+
+                            type = CodeWriteExp(exp.Children[2]);
+
+                            if (type != symbol.Type)
+                            {
+                                Console.Error.WriteLine($"Error: type missmatch");
+                                Environment.Exit(-1);
+                            }
+
+                            _mainIL.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
+
+                            return type;
+                        }
+                        else
+                        {
+                            Symbol symbol = _st.GetSymbol(GetID(exp.Children[0]));
+                            string type;
+
+                            if (symbol == null)
+                            {
+                                Console.Error.WriteLine($"Error: {exp.Children[0].Token.Value} is not declared.");
+                                Environment.Exit(-1);
+                            }
+
+                            type = CodeWriteExp(exp.Children[2]);
+
+                            Push(GetID(exp.Children[2]));
+
+                            if (type != symbol.Type)
+                            {
+                                Console.Error.WriteLine($"Error: type missmatch");
+                                Environment.Exit(-1);
+                            }
+
+                            _mainIL.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
+
+                            return type;
+                        }
+                    }
+                }
+
+
                 if (exp.Tag == "mulExpression" || exp.Tag == "sumExpression")
                 {
                     string type = CodeWriteExp(exp.Children[0]);    //push 1st exp
@@ -278,6 +334,21 @@ namespace CCompilerNet.CodeGen
                 default:
                     return null;
             }
+        }
+
+        public string GetID(ASTNode root)
+        {
+            if (root.Tag == "mutable")
+            {
+                return root.Children[0].Token.Value;
+            }
+
+            if (root.Tag == "constant")
+            {
+                return null;
+            }
+
+            return GetID(root.Children[0]);
         }
     }
 }
