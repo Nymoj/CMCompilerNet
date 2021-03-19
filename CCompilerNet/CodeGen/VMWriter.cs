@@ -56,6 +56,19 @@ namespace CCompilerNet.CodeGen
             _mainIL.Emit(OpCodes.Ldc_I4, value?1:0);
         }
 
+        private void Push(string id)
+        {
+            Symbol symbol = _st.GetSymbol(id);
+
+            if (symbol == null)
+            {
+                Console.Error.WriteLine($"Error: {id} is not declared.");
+                Environment.Exit(-1);
+            }
+
+            _mainIL.Emit(OpCodes.Ldloc, symbol.LocalBuilder.LocalIndex);
+        }
+
         public void Save(string path)
         {
             _typeBuilder.CreateType();
@@ -99,20 +112,29 @@ namespace CCompilerNet.CodeGen
             {
                 string value = exp.Children[0].Token.Value;
 
-                if (value == "false" || value == "true")
+                if (exp.Tag == "constant")
                 {
-                    Push(bool.Parse(value));
-                    return "bool";
-                }
+                    if (value == "false" || value == "true")
+                    {
+                        Push(bool.Parse(value));
+                        return "bool";
+                    }
 
-                if (value.Contains("'"))
+                    if (value.Contains("'"))
+                    {
+                        Push(value.ElementAt(1));
+                        return "char";
+                    }
+
+                    Push(int.Parse(value));
+                    return "int";
+                }
+                else
                 {
-                    Push(value.ElementAt(1));
-                    return "char";
+                    // pushing the id
+                    Push(value);
+                    return _st.GetSymbol(value).Type;
                 }
-
-                Push(int.Parse(value));
-                return "int";
             }
 
             if (exp.Tag == "operator")
