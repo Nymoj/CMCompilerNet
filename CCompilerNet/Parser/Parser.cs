@@ -14,8 +14,6 @@ namespace CCompilerNet.Parser
         private Lexer _lexer;
         private Token _currentToken;
         public AST _ast { get; private set; }
-        // global scope table
-        private SymbolTable _st;
         public VMWriter _vm { get; }
 
         public Parser(Parser other)
@@ -29,7 +27,6 @@ namespace CCompilerNet.Parser
             _ast = null;
             _lexer = new Lexer(filePath);
             _currentToken = _lexer.GetNextToken();
-            _st = new SymbolTable();
             _vm = new VMWriter();
         }
 
@@ -205,7 +202,7 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
-            AddSymbolsFromScopedVarDecl(scopedVarDecl, _st);
+            _vm.AddSymbolsFromScopedVarDecl(scopedVarDecl);
 
             EatToken();
             parent.Add(scopedVarDecl);

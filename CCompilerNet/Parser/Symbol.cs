@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -11,6 +12,7 @@ namespace CCompilerNet.Parser
         public string Type { get; set; }
         public Kind Kind { get; set; }
         public int Index { get; set; }
+        public LocalBuilder LocalBuilder { get; set; }
 
         public Symbol(string type, Kind kind)
         {
