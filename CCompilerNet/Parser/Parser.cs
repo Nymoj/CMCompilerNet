@@ -14,6 +14,7 @@ namespace CCompilerNet.Parser
         private Lexer _lexer;
         private Token _currentToken;
         public AST _ast { get; private set; }
+        // global scope table
         private SymbolTable _st;
         public VMWriter _vm { get; }
 
