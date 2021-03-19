@@ -1,10 +1,9 @@
 int main()
 {
-	int a : 3;
-	int b : 2;
-	int c : a + b;
+	int shalev : 17;
+	int nir : 32;
 
-	b = c = a = 11;
+	nir = shalev = 99 - 3 + 3 * 3;
 
-	return b * a + c ;
+	return shalev + nir;
 }

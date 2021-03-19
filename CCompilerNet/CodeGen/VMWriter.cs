@@ -279,11 +279,18 @@ namespace CCompilerNet.CodeGen
             string currType;
             foreach (ASTNode child in exp.Children)
             {
-                currType = CodeWriteExp(child);
-
-                if (currType != "operator" && type != currType)
+                if (child.Tag == "mulExpressionTag" || child.Tag == "sumExpressionTag")
                 {
-                    return false;
+                    CodeWriteTag(child, type);
+                }
+                else
+                {
+                    currType = CodeWriteExp(child);
+
+                    if (currType != "operator" && type != currType)
+                    {
+                        return false;
+                    }
                 }
             }
 
