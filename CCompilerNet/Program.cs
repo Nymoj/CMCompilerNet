@@ -19,7 +19,7 @@ namespace CCompilerNet
             parser.CompileProgram();
 
             AST ast = parser._ast;
-            //parser._vm.Save("output.exe");
+            parser._vm.Save("output.exe");
 
             outputFile.Write(ast?.ToString());
             outputFile.Close();

@@ -41,9 +41,19 @@ namespace CCompilerNet.CodeGen
             
         }
 
-        private void Push(string value)
+        private void Push(char value)
         {
-            _mainIL.Emit(OpCodes.Ldc_I4, int.Parse(value));
+            _mainIL.Emit(OpCodes.Ldc_I4, value);
+        }
+
+        private void Push(int value)
+        {
+            _mainIL.Emit(OpCodes.Ldc_I4, value);
+        }
+
+        private void Push(bool value)
+        {
+            _mainIL.Emit(OpCodes.Ldc_I4, value?1:0);
         }
 
         public void Save(string path)
@@ -76,12 +86,27 @@ namespace CCompilerNet.CodeGen
 
             
         }
-
-        public void CodeWriteExp(ASTNode exp)
+        public string CodeWriteExp(ASTNode exp)
         {
+
             if (exp.Tag == "constant" || exp.Tag == "mutable")
             {
-                Push(exp.Children[0].Token.Value);
+                string value = exp.Children[0].Token.Value;
+
+                if (value == "false" || value == "true")
+                {
+                    Push(bool.Parse(value));
+                    return "bool";
+                }
+
+                if (value.Contains("'"))
+                {
+                    Push(value.ElementAt(1));
+                    return "char";
+                }
+
+                Push(int.Parse(value));
+                return "int";
             }
 
             if (exp.Tag == "operator")
@@ -102,6 +127,8 @@ namespace CCompilerNet.CodeGen
                         _mainIL.Emit(OpCodes.Div);
                         break;
                 }
+
+                return "operator";
             }
 
             if (exp.Children.Count > 1)
@@ -109,28 +136,32 @@ namespace CCompilerNet.CodeGen
                 
                 if (exp.Tag == "mulExpression" || exp.Tag == "sumExpression")
                 {
-                    CodeWriteExp(exp.Children[0]);    //push 1st exp
+                    string type = CodeWriteExp(exp.Children[0]);    //push 1st exp
 
-                    CodeWriteExp(exp.Children[1]);        //code generation of tag
+                    if (!CodeWriteTag(exp.Children[1], type))        //code generation of tag
+                    {
+                        Console.Error.WriteLine($"Error: types mismatch");
+                        Environment.Exit(-1);
+                    }
 
                 }
 
-                if (exp.Tag == "mulExpressionTag" || exp.Tag == "sumExpressionTag")
+                /*if (exp.Tag == "mulExpressionTag" || exp.Tag == "sumExpressionTag")
                 {
                     foreach (ASTNode child in exp.Children)
                     {
                         CodeWriteExp(child);
                     }
-                }
+                }*/
 
-                if (exp.Tag == "unaryExp")
+                /*if (exp.Tag == "unaryExp")
                 {
                     CodeWriteExp(exp.Children[0]); //push exp
 
-                    Console.WriteLine(exp.Children[1].Children[0].Token.Value); //push operator
-                }
+                    CodeWriteExp(exp.Children[1]); // pushes operator                                 
+                }*/
 
-                if (exp.Tag == "call")
+               /* if (exp.Tag == "call")
                 {
                     if (exp.Children[1].Children[0].Children.Any()) //checks if argument list is empty
                     {
@@ -146,14 +177,32 @@ namespace CCompilerNet.CodeGen
                     }
                     Console.WriteLine("call " + exp.Children[0].Token.Value);  //call func
                 }
-
+               */
                 
             }
 
             if (exp.Children.Count == 1)
             {
-                CodeWriteExp(exp.Children[0]);     //move over to next member
+                return CodeWriteExp(exp.Children[0]);     //move over to next member
             }
+
+            return null;
+        }
+
+        public bool CodeWriteTag(ASTNode exp, string type)
+        {
+            string currType;
+            foreach (ASTNode child in exp.Children)
+            {
+                currType = CodeWriteExp(child);
+
+                if (currType != "operator" && type != currType)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         public void AddSymbolsFromScopedVarDecl(ASTNode root)
