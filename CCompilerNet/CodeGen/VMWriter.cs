@@ -73,8 +73,7 @@ namespace CCompilerNet.CodeGen
             _mainIL.Emit(OpCodes.Ret);
         }
 
-
-        public void CodeWriteScopedVarDecl(string name, string value)
+        public void CodeWriteScopedVarDecl(string name, string type)
         {
             Symbol symbol = _st.GetSymbol(name);
 
@@ -84,8 +83,15 @@ namespace CCompilerNet.CodeGen
                 Environment.Exit(-1);
             }
 
-            
+            if (symbol.Type != type)
+            {
+                Console.Error.WriteLine($"Error: type missmatch");
+                Environment.Exit(-1);
+            }
+
+            _mainIL.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
         }
+
         public string CodeWriteExp(ASTNode exp)
         {
 
@@ -144,6 +150,7 @@ namespace CCompilerNet.CodeGen
                         Environment.Exit(-1);
                     }
 
+                    return type;
                 }
 
                 /*if (exp.Tag == "mulExpressionTag" || exp.Tag == "sumExpressionTag")
@@ -231,7 +238,7 @@ namespace CCompilerNet.CodeGen
                 _st.Define(child.Children[0].Token.Value, type, attribute, _mainIL.DeclareLocal(ConvertToType(type)));
                 if (child.Children.Count > 1)
                 {
-                    CodeWriteScopedVarDecl(child.Children[0].Token.Value, child.Children[1].Token.Value);
+                    CodeWriteScopedVarDecl(child.Children[0].Token.Value, CodeWriteExp(child.Children[1]));
                 }
             }
         }
