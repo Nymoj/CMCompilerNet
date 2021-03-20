@@ -1,7 +1,11 @@
-bool main()
+int main()
 {
-	int a : 2;
-	int b : 2;
+	int a : 1;
 
-	return a >= b and false;
+	if a == 1 then
+	{
+		a = 5;
+	}
+
+	return a;
 }

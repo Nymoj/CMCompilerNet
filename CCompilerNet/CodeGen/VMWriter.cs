@@ -86,6 +86,64 @@ namespace CCompilerNet.CodeGen
             _mainIL.Emit(OpCodes.Ret);
         }
 
+        public void CodeWriteStmtList(ASTNode root)
+        {
+            // iterating through the statements
+            foreach(ASTNode child in root.Children)
+            {
+                CodeWriteStmt(child);
+            }
+        }
+
+        public void CodeWriteStmt(ASTNode root)
+        {
+            switch(root.Tag)
+            {
+                case "returnStmt":
+                    CodeWriteReturnStmt(root.Children[0]);
+                    break;
+                case "selectStmt":
+                    CodeWriteSelectStmt(root.Children[0]);
+                    break;
+                case "expStmt":
+                    CodeWriteExp(root.Children[0]);
+                    break;
+            }
+        }
+
+        public void CodeWriteSelectStmt(ASTNode root)
+        {
+            
+            // checking if the root is just a single if
+            // with else
+            if (root.Children.Count > 2)
+            {
+
+            }
+            // without else
+            else
+            {
+                /*CodeWriteSimpleExp(root.Children[0]);
+                CodeWriteStmt(root.Children[1]);
+                _mainIL.Emit(OpCodes.Brfalse, toEnd);
+                
+                
+                _mainIL.MarkLabel(toEnd);
+                CodeWriteSimpleExp(root.Children[0]);
+                Label toEnd = _mainIL.DefineLabel();
+                _mainIL.Emit(OpCodes.Brfalse, toEnd);
+                CodeWriteStmt(root.Children[1]);
+                _mainIL.MarkLabel(toEnd);*/
+                CodeWriteSimpleExp(root.Children[0]);
+
+                var toEnd = _mainIL.DefineLabel();
+                _mainIL.Emit(OpCodes.Brfalse, toEnd);
+                _mainIL.Emit(OpCodes.Ldstr, "Hello");
+                _mainIL.Emit(OpCodes.Call, typeof(Console).GetMethod("WriteLine", new Type[] { typeof(string) }));
+                _mainIL.MarkLabel(toEnd);
+            }
+        }
+
         public void CodeWriteScopedVarDecl(string name, string type)
         {
             Symbol symbol = _st.GetSymbol(name);
@@ -106,6 +164,67 @@ namespace CCompilerNet.CodeGen
         }
 
         public string CodeWriteExp(ASTNode exp)
+        {
+            if (exp.Children.Count == 3 && exp.Children[1].Token != null)
+            {
+                if (exp.Children[1].Token.Value == "=")
+                {
+                    if (exp.Children[2].Children.Count < 2)
+                    {
+                        Symbol symbol = _st.GetSymbol(GetID(exp.Children[0]));
+                        string type;
+
+                        if (symbol == null)
+                        {
+                            Console.Error.WriteLine($"Error: {exp.Children[0].Token.Value} is not declared.");
+                            Environment.Exit(-1);
+                        }
+
+                        type = CodeWriteExp(exp.Children[2]);
+
+                        if (type != symbol.Type)
+                        {
+                            Console.Error.WriteLine($"Error: type missmatch");
+                            Environment.Exit(-1);
+                        }
+
+                        _mainIL.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
+
+                        return type;
+                    }
+                    else
+                    {
+                        Symbol symbol = _st.GetSymbol(GetID(exp.Children[0]));
+                        string type;
+
+                        if (symbol == null)
+                        {
+                            Console.Error.WriteLine($"Error: {exp.Children[0].Token.Value} is not declared.");
+                            Environment.Exit(-1);
+                        }
+
+                        type = CodeWriteExp(exp.Children[2]);
+
+                        Push(GetID(exp.Children[2]));
+
+                        if (type != symbol.Type)
+                        {
+                            Console.Error.WriteLine($"Error: type missmatch");
+                            Environment.Exit(-1);
+                        }
+
+                        _mainIL.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
+
+                        return type;
+                    }
+                }
+
+
+            }
+
+            return CodeWriteSimpleExp(exp);
+        }
+        public string CodeWriteSimpleExp(ASTNode exp)
         {
 
             if (exp.Tag == "constant" || exp.Tag == "mutable")
@@ -159,6 +278,21 @@ namespace CCompilerNet.CodeGen
                 return "operator";
             }
 
+            if (exp.Tag == "unaryOperator")
+            {
+                switch (exp.Children[0].Token.Value)
+                {
+                    case "-":
+                        _mainIL.Emit(OpCodes.Neg);
+                        break;
+                    case "not":
+                        _mainIL.Emit(OpCodes.Ldc_I4_0);
+                        _mainIL.Emit(OpCodes.Ceq);
+                        break;
+
+                }
+            }
+
             if (exp.Children.Count > 1)
             {
                 if (exp.Tag == "andExpression")
@@ -193,66 +327,11 @@ namespace CCompilerNet.CodeGen
                     return type;
                 }
 
-                if (exp.Children.Count == 3 && exp.Children[1].Token != null)
-                {
-                    if (exp.Children[1].Token.Value == "=")
-                    {
-                        if (exp.Children[2].Children.Count < 2)
-                        {
-                            Symbol symbol = _st.GetSymbol(GetID(exp.Children[0]));
-                            string type;
 
-                            if (symbol == null)
-                            {
-                                Console.Error.WriteLine($"Error: {exp.Children[0].Token.Value} is not declared.");
-                                Environment.Exit(-1);
-                            }
-
-                            type = CodeWriteExp(exp.Children[2]);
-
-                            if (type != symbol.Type)
-                            {
-                                Console.Error.WriteLine($"Error: type missmatch");
-                                Environment.Exit(-1);
-                            }
-
-                            _mainIL.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
-
-                            return type;
-                        }
-                        else
-                        {
-                            Symbol symbol = _st.GetSymbol(GetID(exp.Children[0]));
-                            string type;
-
-                            if (symbol == null)
-                            {
-                                Console.Error.WriteLine($"Error: {exp.Children[0].Token.Value} is not declared.");
-                                Environment.Exit(-1);
-                            }
-
-                            type = CodeWriteExp(exp.Children[2]);
-
-                            Push(GetID(exp.Children[2]));
-
-                            if (type != symbol.Type)
-                            {
-                                Console.Error.WriteLine($"Error: type missmatch");
-                                Environment.Exit(-1);
-                            }
-
-                            _mainIL.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
-
-                            return type;
-                        }
-                    }
-
-                    
-                }
                 if (exp.Tag == "relExpression")
                 {
                     //push both members of the rel expression
-                    CodeWriteExp(exp.Children[0]); 
+                    CodeWriteExp(exp.Children[0]);
                     CodeWriteExp(exp.Children[2]);
 
                     switch (exp.Children[1].Children[0].Token.Value) // switch case of rel expression operator
@@ -300,7 +379,7 @@ namespace CCompilerNet.CodeGen
                     return type;
                 }
 
-                
+
 
                 /*if (exp.Tag == "mulExpressionTag" || exp.Tag == "sumExpressionTag")
                 {
@@ -310,12 +389,22 @@ namespace CCompilerNet.CodeGen
                     }
                 }*/
 
-                /*if (exp.Tag == "unaryExp")
+                if (exp.Tag == "unaryExp")
                 {
-                    CodeWriteExp(exp.Children[0]); //push exp
+                    string type = CodeWriteExp(exp.Children[0]); //push exp
 
-                    CodeWriteExp(exp.Children[1]); // pushes operator                                 
-                }*/
+                    CodeWriteExp(exp.Children[1]); // pushes operator  
+
+                    return type;
+                }
+
+                if (exp.Tag == "unaryRelExpression")
+                {
+                    string type = CodeWriteExp(exp.Children[1]); //push exp
+
+                    _mainIL.Emit(OpCodes.Ldc_I4_0);
+                    _mainIL.Emit(OpCodes.Ceq);
+                }
 
                 /* if (exp.Tag == "call")
                  {

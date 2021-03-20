@@ -1413,6 +1413,7 @@ namespace CCompilerNet.Parser
 
             if (!IsValueEquals("else"))
             {
+                _vm.CodeWriteSelectStmt(selectStmt);
                 parent.Add(selectStmt);
                 return true;
             }
@@ -1423,6 +1424,8 @@ namespace CCompilerNet.Parser
             {
                 return false;
             }
+
+            _vm.CodeWriteSelectStmt(selectStmt);
 
             parent.Add(selectStmt);
             return true;
