@@ -38,7 +38,7 @@ namespace CCompilerNet.CodeGen
                 "Main", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static,
                 typeof(int), new Type[] { typeof(string[]) });
             _mainIL = _methodBuilder.GetILGenerator();
-            
+
         }
 
         private void Push(char value)
@@ -53,7 +53,7 @@ namespace CCompilerNet.CodeGen
 
         private void Push(bool value)
         {
-            _mainIL.Emit(OpCodes.Ldc_I4, value?1:0);
+            _mainIL.Emit(OpCodes.Ldc_I4, value ? 1 : 0);
         }
 
         private void Push(string id)
@@ -140,7 +140,7 @@ namespace CCompilerNet.CodeGen
             if (exp.Tag == "operator")
             {
                 // Console.WriteLine(exp.Children[0].Token.Value);
-                switch(exp.Children[0].Token.Value)
+                switch (exp.Children[0].Token.Value)
                 {
                     case "+":
                         _mainIL.Emit(OpCodes.Add);
@@ -231,6 +231,20 @@ namespace CCompilerNet.CodeGen
                     return type;
                 }
 
+                if (exp.Tag == "andExpression")
+                {
+                    string type = CodeWriteExp(exp.Children[0]);
+
+                    if (!CodeWriteTag(exp.Children[1], type))        //code generation of tag
+                    {
+                        Console.Error.WriteLine($"Error: types mismatch");
+                        Environment.Exit(-1);
+                    }
+
+                    _mainIL.Emit(OpCodes.And);
+                    return type;
+                }
+
                 /*if (exp.Tag == "mulExpressionTag" || exp.Tag == "sumExpressionTag")
                 {
                     foreach (ASTNode child in exp.Children)
@@ -246,24 +260,24 @@ namespace CCompilerNet.CodeGen
                     CodeWriteExp(exp.Children[1]); // pushes operator                                 
                 }*/
 
-               /* if (exp.Tag == "call")
-                {
-                    if (exp.Children[1].Children[0].Children.Any()) //checks if argument list is empty
-                    {
-                        CodeWriteExp(exp.Children[1].Children[0].Children[0]); //first argument of function
+                /* if (exp.Tag == "call")
+                 {
+                     if (exp.Children[1].Children[0].Children.Any()) //checks if argument list is empty
+                     {
+                         CodeWriteExp(exp.Children[1].Children[0].Children[0]); //first argument of function
 
-                        if (exp.Children[1].Children[0].Children.Count > 1)     //checks if theres more than 1 arguments resulting in arg tag
-                        {
-                            foreach (ASTNode child in exp.Children[1].Children[0].Children[1].Children) //goes over all arg list tag members
-                            {
-                                CodeWriteExp(child);
-                            }
-                        }
-                    }
-                    Console.WriteLine("call " + exp.Children[0].Token.Value);  //call func
-                }
-               */
-                
+                         if (exp.Children[1].Children[0].Children.Count > 1)     //checks if theres more than 1 arguments resulting in arg tag
+                         {
+                             foreach (ASTNode child in exp.Children[1].Children[0].Children[1].Children) //goes over all arg list tag members
+                             {
+                                 CodeWriteExp(child);
+                             }
+                         }
+                     }
+                     Console.WriteLine("call " + exp.Children[0].Token.Value);  //call func
+                 }
+                */
+
             }
 
             if (exp.Children.Count == 1)

@@ -83,7 +83,7 @@ namespace CCompilerNet.Parser
         public bool CompileProgram()
         {
             var root = new ASTNode("program");
-            
+
             if (CompileDeclList(root))
             {
                 _ast = new AST(root);
@@ -284,7 +284,7 @@ namespace CCompilerNet.Parser
             return true;
         }
 
-        
+
         // varDeclId -> ID | ID [ NUMCONST ]
         private bool CompileVarDeclId(ASTNode parent)
         {
@@ -478,7 +478,7 @@ namespace CCompilerNet.Parser
             {
                 return false;
             }
-            
+
             // if typespec returned true, type token must be eaten
             // typespec doesn't eat tokens
             EatToken();
@@ -517,7 +517,7 @@ namespace CCompilerNet.Parser
         private bool CompileParmIdListTag(ASTNode parent)
         {
             ASTNode parmIdListTag = new ASTNode("parmIdListTag");
-            
+
             // epsilon
             if (!IsValueEquals(","))
             {
@@ -583,7 +583,7 @@ namespace CCompilerNet.Parser
         private bool CompileExp(ASTNode parent)
         {
             ASTNode expression = new ASTNode("expression");
-            List<string> mutables = new List<string>{ "=", "+=", "-=", "*=", "/=" };   //list of operators that lead to another expression
+            List<string> mutables = new List<string> { "=", "+=", "-=", "*=", "/=" };   //list of operators that lead to another expression
             List<string> ops = new List<string> { "++", "--" };
 
             if (CompileSimpleExp(expression))
@@ -689,8 +689,8 @@ namespace CCompilerNet.Parser
         {
             ASTNode simpleExp = new ASTNode("simpleExpression");
 
-            if (!CompileAndExp(simpleExp))                        
-            { 
+            if (!CompileAndExp(simpleExp))
+            {
                 return false;
             }
 
@@ -769,7 +769,8 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
-            parent.Add(andExpTag);
+            //parent.Add(andExpTag);
+            parent += andExpTag;
             return true;
         }
 
@@ -797,7 +798,7 @@ namespace CCompilerNet.Parser
                 parent.Add(unaryRelExp);
                 return true;
             }
-            return false;   
+            return false;
         }
 
         //relExp -> MinMaxExp relop MinMaxExp | MinMaxExp
@@ -824,7 +825,7 @@ namespace CCompilerNet.Parser
             parent.Add(relExp);
             return true;
         }
-        
+
         //relop -> <= | < | > | >= | == | !=
         private bool CompileRelop(ASTNode parent)
         {
@@ -949,7 +950,7 @@ namespace CCompilerNet.Parser
             sumExpTag.Children.Reverse();
             parent.Add(sumExpTag);
 
-            return true; 
+            return true;
         }
 
         //sumOp -> + | -
@@ -1012,7 +1013,7 @@ namespace CCompilerNet.Parser
 
             mulExpTag.Children.Reverse();
             parent.Add(mulExpTag);
-            return true;  
+            return true;
         }
 
         //mulOp -> * | / | %
@@ -1146,7 +1147,7 @@ namespace CCompilerNet.Parser
 
             mutable.Add(new ASTNode(_currentToken));
 
-           
+
 
             if (_lexer.Peek(1).Value != "[")
             {
@@ -1171,7 +1172,7 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
-            mutable.Add(new ASTNode(new Token(TokenType.SpecialSymbol,"]")));
+            mutable.Add(new ASTNode(new Token(TokenType.SpecialSymbol, "]")));
 
             parent.Add(mutable);
 
@@ -1441,7 +1442,7 @@ namespace CCompilerNet.Parser
                 {
                     return false;
                 }
-                
+
                 if (!IsValueEquals("do"))
                 {
                     return false;
@@ -1737,7 +1738,7 @@ namespace CCompilerNet.Parser
             // points to the varDeclInit in children
             // depends on the number of children, assuming the number is 2 at the beginning
             int startIndex = 1;
-            
+
             // if there is an attribute, the count of children will be 3 (static, typeSpec varDeclList)
             if (root.Children.Count > 2)
             {
@@ -1750,7 +1751,7 @@ namespace CCompilerNet.Parser
             type = root.Children[startIndex - 1].Token.Value;
 
             // iterating through the IDs and adding them to the symbol table
-            foreach(ASTNode child in root.Children[startIndex].Children)
+            foreach (ASTNode child in root.Children[startIndex].Children)
             {
                 st.Define(child.Children[0].Token.Value, type, attribute);
             }
