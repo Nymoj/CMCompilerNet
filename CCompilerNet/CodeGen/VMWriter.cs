@@ -161,8 +161,39 @@ namespace CCompilerNet.CodeGen
 
             if (exp.Children.Count > 1)
             {
+                if (exp.Tag == "andExpression")
+                {
+                    string type = CodeWriteExp(exp.Children[0]);
 
-                if (exp.Children.Count > 2)
+                    for (int i = 1; i < exp.Children.Count; i++)
+                    {
+                        if (type != CodeWriteExp(exp.Children[i]))
+                        {
+                            Console.Error.WriteLine($"Error: type missmatch");
+                            Environment.Exit(-1);
+                        }
+                        _mainIL.Emit(OpCodes.And);
+                    }
+                    return type;
+                }
+
+                if (exp.Tag == "simpleExpression")
+                {
+                    string type = CodeWriteExp(exp.Children[0]);
+
+                    for (int i = 1; i < exp.Children.Count; i++)
+                    {
+                        if (type != CodeWriteExp(exp.Children[i]))
+                        {
+                            Console.Error.WriteLine($"Error: type missmatch");
+                            Environment.Exit(-1);
+                        }
+                        _mainIL.Emit(OpCodes.Or);
+                    }
+                    return type;
+                }
+
+                if (exp.Children.Count == 3)
                 {
                     if (exp.Children[1].Token.Value == "=")
                     {
@@ -231,19 +262,7 @@ namespace CCompilerNet.CodeGen
                     return type;
                 }
 
-                if (exp.Tag == "andExpression")
-                {
-                    string type = CodeWriteExp(exp.Children[0]);
-
-                    if (!CodeWriteTag(exp.Children[1], type))        //code generation of tag
-                    {
-                        Console.Error.WriteLine($"Error: types mismatch");
-                        Environment.Exit(-1);
-                    }
-
-                    _mainIL.Emit(OpCodes.And);
-                    return type;
-                }
+                
 
                 /*if (exp.Tag == "mulExpressionTag" || exp.Tag == "sumExpressionTag")
                 {

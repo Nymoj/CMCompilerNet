@@ -723,7 +723,8 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
-            parent.Add(simpleExpTag);
+            //parent.Add(simpleExpTag);
+            parent += simpleExpTag;
             return true;
         }
 
