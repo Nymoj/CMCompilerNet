@@ -193,7 +193,7 @@ namespace CCompilerNet.CodeGen
                     return type;
                 }
 
-                if (exp.Children.Count == 3)
+                if (exp.Children.Count == 3 && exp.Children[1].Token != null)
                 {
                     if (exp.Children[1].Token.Value == "=")
                     {
@@ -246,8 +246,46 @@ namespace CCompilerNet.CodeGen
                             return type;
                         }
                     }
-                }
 
+                    
+                }
+                if (exp.Tag == "relExpression")
+                {
+                    //push both members of the rel expression
+                    CodeWriteExp(exp.Children[0]); 
+                    CodeWriteExp(exp.Children[2]);
+
+                    switch (exp.Children[1].Children[0].Token.Value) // switch case of rel expression operator
+                    {
+                        case "==":
+                            _mainIL.Emit(OpCodes.Ceq);
+                            break;
+                        case "!=":
+                            _mainIL.Emit(OpCodes.Ceq);
+                            _mainIL.Emit(OpCodes.Ldc_I4_0);
+                            _mainIL.Emit(OpCodes.Ceq);
+                            break;
+                        case ">":
+                            _mainIL.Emit(OpCodes.Cgt);
+                            break;
+                        case "<":
+                            _mainIL.Emit(OpCodes.Clt);
+                            break;
+                        case ">=":
+                            _mainIL.Emit(OpCodes.Clt);
+                            _mainIL.Emit(OpCodes.Ldc_I4_0);
+                            _mainIL.Emit(OpCodes.Ceq);
+                            break;
+                        case "<=":
+                            _mainIL.Emit(OpCodes.Cgt);
+                            _mainIL.Emit(OpCodes.Ldc_I4_0);
+                            _mainIL.Emit(OpCodes.Ceq);
+                            break;
+
+                    }
+
+                    return "bool";
+                }
 
                 if (exp.Tag == "mulExpression" || exp.Tag == "sumExpression")
                 {
