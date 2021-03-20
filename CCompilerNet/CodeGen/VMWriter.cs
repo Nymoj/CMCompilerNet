@@ -97,7 +97,7 @@ namespace CCompilerNet.CodeGen
 
         public void CodeWriteStmt(ASTNode root)
         {
-            switch(root.Tag)
+            switch(root.Children[0].Tag)
             {
                 case "returnStmt":
                     CodeWriteReturnStmt(root.Children[0]);
@@ -123,24 +123,19 @@ namespace CCompilerNet.CodeGen
             // without else
             else
             {
-                /*CodeWriteSimpleExp(root.Children[0]);
-                CodeWriteStmt(root.Children[1]);
-                _mainIL.Emit(OpCodes.Brfalse, toEnd);
                 
-                
-                _mainIL.MarkLabel(toEnd);
                 CodeWriteSimpleExp(root.Children[0]);
                 Label toEnd = _mainIL.DefineLabel();
                 _mainIL.Emit(OpCodes.Brfalse, toEnd);
                 CodeWriteStmt(root.Children[1]);
-                _mainIL.MarkLabel(toEnd);*/
-                CodeWriteSimpleExp(root.Children[0]);
+                _mainIL.MarkLabel(toEnd);
+                //CodeWriteSimpleExp(root.Children[0]);
 
-                var toEnd = _mainIL.DefineLabel();
+                /*var toEnd = _mainIL.DefineLabel();
                 _mainIL.Emit(OpCodes.Brfalse, toEnd);
                 _mainIL.Emit(OpCodes.Ldstr, "Hello");
                 _mainIL.Emit(OpCodes.Call, typeof(Console).GetMethod("WriteLine", new Type[] { typeof(string) }));
-                _mainIL.MarkLabel(toEnd);
+                _mainIL.MarkLabel(toEnd);*/
             }
         }
 

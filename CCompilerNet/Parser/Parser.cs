@@ -397,7 +397,7 @@ namespace CCompilerNet.Parser
 
             EatToken();
 
-            if (!CompileStmt(funDecl))
+            if (!CompileStmt(funDecl, true))
             {
                 return false;
             }
@@ -698,6 +698,7 @@ namespace CCompilerNet.Parser
             {
                 return false;
             }
+
 
             parent.Add(simpleExp);
             return true;
@@ -1301,17 +1302,17 @@ namespace CCompilerNet.Parser
         #region Statements
 
         // stmt -> expStmt | compoundStmt | selectStmt | iterStmt | returnStmt | breakStmt
-        private bool CompileStmt(ASTNode parent)
+        private bool CompileStmt(ASTNode parent, bool write)
         {
             ASTNode stmt = new ASTNode("stmt");
 
             if (!(
-                CompileExpStmt(stmt)
-                || CompileCompoundStmt(stmt)
-                || CompileSelectStmt(stmt)
-                || CompileIterStmt(stmt)
-                || CompileReturnStmt(stmt)
-                || CompileBreakStmt(stmt)
+                CompileExpStmt(stmt, write)
+                || CompileCompoundStmt(stmt, write)
+                || CompileSelectStmt(stmt, write)
+                || CompileIterStmt(stmt, write)
+                || CompileReturnStmt(stmt, write)
+                || CompileBreakStmt(stmt, write)
                 ))
             {
                 return false;
@@ -1322,7 +1323,7 @@ namespace CCompilerNet.Parser
         }
 
         // expStmt -> exp ; | ;
-        private bool CompileExpStmt(ASTNode parent)
+        private bool CompileExpStmt(ASTNode parent, bool write)
         {
             ASTNode expStmt = new ASTNode("expStmt");
 
@@ -1344,14 +1345,14 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
-            _vm.CodeWriteExp(expStmt);
+            //_vm.CodeWriteExp(expStmt);
             EatToken();
             parent.Add(expStmt);
             return true;
         }
 
         // compoundStmt -> { localDecls stmtList }
-        private bool CompileCompoundStmt(ASTNode parent)
+        private bool CompileCompoundStmt(ASTNode parent, bool write)
         {
             ASTNode compoundStmt = new ASTNode("compoundStmt");
 
@@ -1383,7 +1384,7 @@ namespace CCompilerNet.Parser
         }
 
         // selectStmt -> if simpleExp then stmt | if simpleExp then stmt else stmt
-        private bool CompileSelectStmt(ASTNode parent)
+        private bool CompileSelectStmt(ASTNode parent, bool write)
         {
             ASTNode selectStmt = new ASTNode("selectStmt");
 
@@ -1406,7 +1407,7 @@ namespace CCompilerNet.Parser
 
             EatToken();
 
-            if (!CompileStmt(selectStmt))
+            if (!CompileStmt(selectStmt, false))
             {
                 return false;
             }
@@ -1420,7 +1421,7 @@ namespace CCompilerNet.Parser
 
             EatToken();
 
-            if (!CompileStmt(selectStmt))
+            if (!CompileStmt(selectStmt, false))
             {
                 return false;
             }
@@ -1432,7 +1433,7 @@ namespace CCompilerNet.Parser
         }
 
         // iterStmt -> while simpleExp do stmt | for ID = iterRange do stmt
-        private bool CompileIterStmt(ASTNode parent)
+        private bool CompileIterStmt(ASTNode parent, bool write)
         {
             ASTNode iterStmt = new ASTNode("iterStmt");
 
@@ -1455,7 +1456,7 @@ namespace CCompilerNet.Parser
                 iterStmt.Add(new ASTNode(_currentToken));
                 EatToken();
 
-                if (!CompileStmt(iterStmt))
+                if (!CompileStmt(iterStmt, false))
                 {
                     return false;
                 }
@@ -1499,7 +1500,7 @@ namespace CCompilerNet.Parser
                 iterStmt.Add(new ASTNode(_currentToken));
                 EatToken();
 
-                if (!CompileStmt(iterStmt))
+                if (!CompileStmt(iterStmt, false))
                 {
                     return false;
                 }
@@ -1553,7 +1554,7 @@ namespace CCompilerNet.Parser
         }
 
         // returnStmt -> return ; | return exp ;
-        private bool CompileReturnStmt(ASTNode parent)
+        private bool CompileReturnStmt(ASTNode parent, bool write)
         {
             ASTNode returnStmt = new ASTNode("returnStmt");
 
@@ -1579,7 +1580,10 @@ namespace CCompilerNet.Parser
 
                 EatToken();
 
-                _vm.CodeWriteReturnStmt(returnStmt);
+                if (write)
+                {
+                    _vm.CodeWriteReturnStmt(returnStmt);
+                }
                 parent.Add(returnStmt);
                 return true;
             }
@@ -1590,7 +1594,7 @@ namespace CCompilerNet.Parser
             return true;
         }
 
-        private bool CompileBreakStmt(ASTNode parent)
+        private bool CompileBreakStmt(ASTNode parent, bool write)
         {
             ASTNode breakStmt = null;
 
@@ -1617,7 +1621,7 @@ namespace CCompilerNet.Parser
         {
             ASTNode stmtList = new ASTNode("stmtList");
 
-            while (CompileStmt(stmtList)) ;
+            while (CompileStmt(stmtList, true)) ;
 
             if (stmtList.Children.Count() > 0)
             {
