@@ -110,7 +110,10 @@ namespace CCompilerNet.CodeGen
                     break;
             }
         }
-
+        public void CodeWriteIterStmt(ASTNode root)
+        {
+            
+        }
         public void CodeWriteSelectStmt(ASTNode root)
         {
             
@@ -193,12 +196,18 @@ namespace CCompilerNet.CodeGen
         {
             if (exp.Children.Count == 3 && exp.Children[1].Token != null)
             {
-                if (exp.Children[1].Token.Value == "=")
+                
+                if (exp.Children[2].Children.Count < 2)
                 {
-                    if (exp.Children[2].Children.Count < 2)
+                    Symbol symbol = _st.GetSymbol(GetID(exp.Children[0]));
+                    string type;
+
+                    if (symbol == null)
                     {
-                        Symbol symbol = _st.GetSymbol(GetID(exp.Children[0]));
-                        string type;
+                        Console.Error.WriteLine($"Error: {exp.Children[0].Token.Value} is not declared.");
+                        Environment.Exit(-1);
+                    }
+
 
                         // possibly will be removed
                         // the condition is checked in the parser
@@ -208,46 +217,145 @@ namespace CCompilerNet.CodeGen
                             Environment.Exit(-1);
                         }
 
-                        type = CodeWriteExp(exp.Children[2]);
+                    type = CodeWriteExp(exp.Children[2]);
 
-                        if (type != symbol.Type)
-                        {
-                            Console.Error.WriteLine($"Error: type missmatch");
-                            Environment.Exit(-1);
-                        }
 
-                        _mainIL.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
-
-                        return type;
-                    }
-                    else
+                    if (type != symbol.Type)
                     {
-                        Symbol symbol = _st.GetSymbol(GetID(exp.Children[0]));
-                        string type;
-
-                        if (symbol == null)
-                        {
-                            Console.Error.WriteLine($"Error: {exp.Children[0].Token.Value} is not declared.");
-                            Environment.Exit(-1);
-                        }
-
-                        type = CodeWriteExp(exp.Children[2]);
-
-                        Push(GetID(exp.Children[2]));
-
-                        if (type != symbol.Type)
-                        {
-                            Console.Error.WriteLine($"Error: type missmatch");
-                            Environment.Exit(-1);
-                        }
-
-                        _mainIL.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
-
-                        return type;
+                        Console.Error.WriteLine($"Error: type missmatch");
+                        Environment.Exit(-1);
                     }
+
+                    switch (exp.Children[1].Token.Value)
+                    {
+                        case "=":
+                            _mainIL.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
+                            break;
+                        case "+=":
+                            Push(GetID(exp.Children[0]));
+                            _mainIL.Emit(OpCodes.Add);
+                            _mainIL.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
+                            break;
+                        case "-=":
+                            //order of push is important so pushes the 2nd part again and pops the remaining one 
+                            Push(GetID(exp.Children[0]));
+                            CodeWriteExp(exp.Children[2]);
+                            _mainIL.Emit(OpCodes.Sub);                                      
+                            _mainIL.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
+                            _mainIL.Emit(OpCodes.Pop);
+                            break;
+                        case "*=":
+                            Push(GetID(exp.Children[0]));
+                            _mainIL.Emit(OpCodes.Mul);
+                            _mainIL.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
+                            break;
+                        case "/=":
+                            //order of push is important so pushes the 2nd part again and pops the remaining one 
+
+                            Push(GetID(exp.Children[0]));
+                            CodeWriteExp(exp.Children[2]);
+                            _mainIL.Emit(OpCodes.Div);
+                            _mainIL.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
+                            _mainIL.Emit(OpCodes.Pop);
+                            break;
+
+                    }
+
+                    return type;
+                }
+                else
+                {
+                    Symbol symbol = _st.GetSymbol(GetID(exp.Children[0]));
+                    string type;
+
+                    if (symbol == null)
+                    {
+                        Console.Error.WriteLine($"Error: {exp.Children[0].Token.Value} is not declared.");
+                        Environment.Exit(-1);
+                    }
+
+                    type = CodeWriteExp(exp.Children[2]);
+
+                    Push(GetID(exp.Children[2]));
+
+                    if (type != symbol.Type)
+                    {
+                        Console.Error.WriteLine($"Error: type missmatch");
+                        Environment.Exit(-1);
+                    }
+
+                    switch (exp.Children[1].Token.Value)
+                    {
+                        case "=":
+                            _mainIL.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
+                            break;
+                        case "+=":
+                            Push(GetID(exp.Children[0]));
+                            _mainIL.Emit(OpCodes.Add);
+                            _mainIL.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
+                            break;
+                        case "-=":
+                            //order of push is important so pushes the 2nd part again and pops the remaining one 
+
+                            Push(GetID(exp.Children[0]));
+                            CodeWriteExp(exp.Children[2]);
+                            _mainIL.Emit(OpCodes.Sub);
+                            _mainIL.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
+                            _mainIL.Emit(OpCodes.Pop);
+                            break;
+                        case "*=":
+                            Push(GetID(exp.Children[0]));
+                            _mainIL.Emit(OpCodes.Mul);
+                            _mainIL.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
+                            break;
+                        case "/=":
+                            //order of push is important so pushes the 2nd part again and pops the remaining one 
+
+                            Push(GetID(exp.Children[0]));
+                            CodeWriteExp(exp.Children[2]);
+                            _mainIL.Emit(OpCodes.Div);
+                            _mainIL.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
+                            _mainIL.Emit(OpCodes.Pop);
+                            break;
+
+                    }
+
+                    return type;
                 }
 
 
+            }
+
+            if (exp.Children.Count == 2 && exp.Children[1].Token != null)
+            {
+                string op = exp.Children[1].Token.Value;
+                if (op == "++" || op == "--")
+                {
+                    Symbol symbol = _st.GetSymbol(GetID(exp.Children[0]));
+                    if (symbol.Type != "int")
+                    {
+                        Console.Error.WriteLine($"Error: type missmatch");
+                        Environment.Exit(-1);
+                    }
+
+                    Push(GetID(exp.Children[0]));
+                    Push(1);
+
+                    if (op == "++")
+                    {
+                        _mainIL.Emit(OpCodes.Add);
+
+                    }
+                    else
+                    {
+                        _mainIL.Emit(OpCodes.Sub);
+                    }
+
+                    _mainIL.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
+
+                    return "int";
+
+                }
             }
 
             return CodeWriteSimpleExp(exp);
