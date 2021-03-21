@@ -118,7 +118,22 @@ namespace CCompilerNet.CodeGen
             // with else
             if (root.Children.Count > 2)
             {
+                CodeWriteSimpleExp(root.Children[0]);
+                Label toEnd = _mainIL.DefineLabel();
+                Label toElse = _mainIL.DefineLabel();
 
+                // branching to else statements if the condition is false
+                _mainIL.Emit(OpCodes.Brfalse, toElse);
+
+                // translating the statements inside the if
+                CodeWriteStmt(root.Children[1]);
+                // finishing the if statement
+                _mainIL.Emit(OpCodes.Br, toEnd);
+
+                _mainIL.MarkLabel(toElse);
+                // translating the statements inside else
+                CodeWriteStmt(root.Children[2]);
+                _mainIL.MarkLabel(toEnd);
             }
             // without else
             else

@@ -1,11 +1,15 @@
 int main()
 {
-    int a : 1;
+    bool a : true;
     int b : 23;
 
-    if a == 1 then
-        if b == 2 then
-            return a + b;
+    if not a then
+        b = 3;
+    else
+        if a then
+            b = 4;
+        else
+            b = 12;
 
-    return a;
+    return b;
 }
