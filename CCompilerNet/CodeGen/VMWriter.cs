@@ -21,7 +21,7 @@ namespace CCompilerNet.CodeGen
         private ILGenerator _mainIL;
 
         // global scope table
-        private SymbolTable _st;
+        public SymbolTable _st { get; }
 
         public VMWriter()
         {
@@ -173,6 +173,22 @@ namespace CCompilerNet.CodeGen
             _mainIL.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
         }
 
+        public void CodeWriteWhileLoop(ASTNode root)
+        {
+            Label toLoopTop = _mainIL.DefineLabel();
+            Label toCondition = _mainIL.DefineLabel();
+
+            _mainIL.Emit(OpCodes.Br, toCondition);
+            
+            _mainIL.MarkLabel(toLoopTop);
+            // translating the statements
+            CodeWriteStmt(root.Children[3]);
+            _mainIL.MarkLabel(toCondition);
+            // translating the condition
+            CodeWriteSimpleExp(root.Children[1]);
+            _mainIL.Emit(OpCodes.Brtrue, toLoopTop);
+        }
+
         public string CodeWriteExp(ASTNode exp)
         {
             if (exp.Children.Count == 3 && exp.Children[1].Token != null)
@@ -184,6 +200,8 @@ namespace CCompilerNet.CodeGen
                         Symbol symbol = _st.GetSymbol(GetID(exp.Children[0]));
                         string type;
 
+                        // possibly will be removed
+                        // the condition is checked in the parser
                         if (symbol == null)
                         {
                             Console.Error.WriteLine($"Error: {exp.Children[0].Token.Value} is not declared.");

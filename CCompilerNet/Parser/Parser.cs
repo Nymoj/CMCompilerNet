@@ -595,6 +595,14 @@ namespace CCompilerNet.Parser
                         return false;
                     }
 
+                    string id = _vm.GetID(expression);
+                    // check if the id is declared
+                    if (_vm._st.GetSymbol(id) == null)
+                    {
+                        Console.Error.WriteLine($"Error: {id} is not declared.");
+                        Environment.Exit(-1);
+                    }
+
                     if (mutables.Contains(_currentToken.Value)) // checks if mutable -> exp
                     {
                         expression.Add(new ASTNode(_currentToken)); //add operator to node of the expression
@@ -1345,7 +1353,11 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
-            //_vm.CodeWriteExp(expStmt);
+            if (write)
+            {
+                _vm.CodeWriteExp(expStmt);
+            }
+
             EatToken();
             parent.Add(expStmt);
             return true;
@@ -1459,6 +1471,11 @@ namespace CCompilerNet.Parser
                 if (!CompileStmt(iterStmt, false))
                 {
                     return false;
+                }
+
+                if (write)
+                {
+                    _vm.CodeWriteWhileLoop(iterStmt);
                 }
 
                 parent.Add(iterStmt);

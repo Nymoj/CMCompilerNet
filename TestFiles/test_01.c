@@ -1,15 +1,13 @@
 int main()
 {
-    bool a : true;
-    int b : 23;
+    bool stop : false;
+    int a : 0;
 
-    if not a then
-        b = 3;
-    else
-        if a then
-            b = 4;
+    while not stop do
+        if a < 10 then
+            a = a + 1;
         else
-            b = 12;
+            stop = true;
 
-    return b;
+    return a;
 }
