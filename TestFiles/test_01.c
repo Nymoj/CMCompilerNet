@@ -1,8 +1,11 @@
 int main()
 {
-    int a : 3;
+    bool stop : false;
+    int i : 0;
+    int a : 0;
 
-    a += 2;
+    while i < 5 do
+        i++;
 
-    return a;
+    return i + 20;
 }

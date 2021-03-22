@@ -288,8 +288,7 @@ namespace CCompilerNet.Parser
         // varDeclId -> ID | ID [ NUMCONST ]
         private bool CompileVarDeclId(ASTNode parent)
         {
-            ASTNode varDeclId = null;
-            // parent.Add(varDeclId);
+            ASTNode varDeclId = new ASTNode("varDeclId");
 
             if (!IsTokenTypeEquals(TokenType.ID))
             {
@@ -297,7 +296,8 @@ namespace CCompilerNet.Parser
             }
 
             // saving the ID
-            varDeclId = new ASTNode("varDeclId", _currentToken);
+            //varDeclId = new ASTNode("varDeclId", _currentToken);
+            varDeclId.Add(new ASTNode(_currentToken));
             EatToken();
 
             // ID

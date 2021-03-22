@@ -157,25 +157,6 @@ namespace CCompilerNet.CodeGen
             }
         }
 
-        public void CodeWriteScopedVarDecl(string name, string type)
-        {
-            Symbol symbol = _st.GetSymbol(name);
-
-            if (symbol == null)
-            {
-                Console.Error.WriteLine($"Error: {name} is not declared.");
-                Environment.Exit(-1);
-            }
-
-            if (symbol.Type != type)
-            {
-                Console.Error.WriteLine($"Error: type missmatch");
-                Environment.Exit(-1);
-            }
-
-            _mainIL.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
-        }
-
         public void CodeWriteWhileLoop(ASTNode root)
         {
             Label toLoopTop = _mainIL.DefineLabel();
@@ -593,6 +574,32 @@ namespace CCompilerNet.CodeGen
             return true;
         }
 
+        public void CodeWriteScopedVarDecl(ASTNode root, string name, string type)
+        {
+            Symbol symbol = _st.GetSymbol(name);
+
+            if (symbol == null)
+            {
+                Console.Error.WriteLine($"Error: {name} is not declared.");
+                Environment.Exit(-1);
+            }
+
+            if (symbol.Type != type)
+            {
+                Console.Error.WriteLine($"Error: type missmatch");
+                Environment.Exit(-1);
+            }
+
+            if (root.Children.Count > 1)
+            {
+                
+            }
+            else
+            {
+                _mainIL.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
+            }
+        }
+
         public void AddSymbolsFromScopedVarDecl(ASTNode root)
         {
             string type = "";
@@ -616,26 +623,58 @@ namespace CCompilerNet.CodeGen
             // iterating through the IDs and adding them to the symbol table
             foreach (ASTNode child in root.Children[startIndex].Children)
             {
-                _st.Define(child.Children[0].Token.Value, type, attribute, _mainIL.DeclareLocal(ConvertToType(type)));
+                if (child.Children[0].Children.Count > 1)
+                {
+                    _st.Define(child.Children[0].Children[0].Token.Value, type, attribute, _mainIL.DeclareLocal(ConvertToType(type, true)));
+
+                    // init the array
+                    _mainIL.Emit(OpCodes.Ldc_I4, int.Parse(child.Children[0].Children[1].Token.Value));
+                    _mainIL.Emit(OpCodes.Newarr, ConvertToType(type, false));
+                    _mainIL.Emit(OpCodes.Stloc, _st.GetSymbol(child.Children[0].Children[0].Token.Value).Index);
+                }
+                else
+                {
+                    _st.Define(child.Children[0].Children[0].Token.Value, type, attribute, _mainIL.DeclareLocal(ConvertToType(type, false)));
+                }
+
+                // check if initialization is needed
+                // the second child of varDeclInit is always the value
                 if (child.Children.Count > 1)
                 {
-                    CodeWriteScopedVarDecl(child.Children[0].Token.Value, CodeWriteExp(child.Children[1]));
+                    CodeWriteScopedVarDecl(child.Children[0], child.Children[0].Children[0].Token.Value, CodeWriteExp(child.Children[1]));
                 }
             }
         }
 
-        public static Type ConvertToType(string type)
+        public static Type ConvertToType(string type, bool isArrayType)
         {
-            switch (type)
+            if (isArrayType)
             {
-                case "int":
-                    return typeof(Int32);
-                case "bool":
-                    return typeof(Boolean);
-                case "char":
-                    return typeof(Char);
-                default:
-                    return null;
+                switch (type)
+                {
+                    case "int":
+                        return typeof(Int32);
+                    case "bool":
+                        return typeof(Boolean);
+                    case "char":
+                        return typeof(Char);
+                    default:
+                        return null;
+                }
+            }
+            else
+            {
+                switch (type)
+                {
+                    case "int":
+                        return typeof(Int32[]);
+                    case "bool":
+                        return typeof(Boolean[]);
+                    case "char":
+                        return typeof(Char[]);
+                    default:
+                        return null;
+                }
             }
         }
 
