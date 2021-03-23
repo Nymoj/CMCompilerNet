@@ -22,7 +22,7 @@ namespace CCompilerNet.CodeGen
         private ILGenerator _currILGen;
 
         // global scope table
-        public SymbolTable SymbolTable { get; }
+        public SymbolTable SymbolTable { get; set; }
         // function table
         public FunctionTable FunctionTable { get; }
 
@@ -40,7 +40,7 @@ namespace CCompilerNet.CodeGen
                 typeof(int), new Type[] { typeof(string[]) });
             _currILGen = _methodBuilder.GetILGenerator();*/
 
-            SymbolTable = new SymbolTable();
+            SymbolTable = new SymbolTable(null);
             FunctionTable = new FunctionTable(_typeBuilder);
         }
 
@@ -72,10 +72,22 @@ namespace CCompilerNet.CodeGen
             _currILGen.Emit(OpCodes.Ldloc, symbol.LocalBuilder.LocalIndex);
         }
 
-        public void CodeWriteFunction(string name)
+        public void CodeWriteFunction(ASTNode root)
         {
-            _methodBuilder = FunctionTable.GetFunctionSymbol(name).MethodBuilder;
+            string id = SemanticHelper.GetFunctionId(root);
+            //ASTNode stmt = SemanticHelper.GetFunctionStmt(root);
+
+            _methodBuilder = FunctionTable.GetFunctionSymbol(id).MethodBuilder;
             _currILGen = _methodBuilder.GetILGenerator();
+
+            /*SymbolTable = SymbolTable.StartSubRoutine();
+
+            foreach (ASTNode child in stmt.Children)
+            {
+                //CodeWriteStmt(child);
+            }
+
+            SymbolTable = SymbolTable.GetNext();*/
         }
 
         public void Save(string path)
@@ -118,8 +130,36 @@ namespace CCompilerNet.CodeGen
                 case "expStmt":
                     CodeWriteExp(root.Children[0]);
                     break;
+                case "compoundStmt":
+                    CodeWriteCompoundStmt(root.Children[0]);
+                    break;
             }
         }
+
+        public void CodeWriteCompoundStmt(ASTNode root)
+        {
+            SymbolTable = SymbolTable.StartSubRoutine();
+            // if localDecls exists then stmt is the second child,
+            // otherwise stmts are the only children
+            int index = 0;
+
+            if (root.Children[0].Tag == "localDecls")
+            {
+                foreach (ASTNode child in root.Children[0].Children)
+                {
+                    AddSymbolsFromScopedVarDecl(child);
+                }
+                index = 1;
+            }
+            
+            foreach (ASTNode child in root.Children[index].Children)
+            {
+                CodeWriteStmt(child);
+            }
+
+            SymbolTable = SymbolTable.GetNext();
+        }
+
         public void CodeWriteIterStmt(ASTNode root)
         {
             

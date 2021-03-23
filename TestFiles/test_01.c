@@ -1,11 +1,19 @@
-char foo(int a)
+int foo()
 {
-	int ggMyFriends : 100;
-
-	return ggMyFriends;
+	int b;
+	return 0;
 }
 
 int main()
 {
-	return 10;
+	int i : 0;
+	int a : 0;
+
+	while i < 200000 do
+	{
+		a += 2;
+		i++;
+	}
+
+	return a;
 }

@@ -18,16 +18,23 @@ namespace CCompilerNet.Parser
     public class SymbolTable
     {
         private Dictionary<string, Symbol> _st;
-        private SymbolTable SubRoutine;
+        /*public SymbolTable Scope { get; private set; }
+        private SymbolTable _next;*/
+
+        private SymbolTable _head;
+        private SymbolTable _next;
 
         private int _staticIndex;
         private int _localIndex;
         private int _argIndex;
         private int _thatIndex;
 
-        public SymbolTable()
+        public SymbolTable(SymbolTable next)
         {
             _st = new Dictionary<string, Symbol>();
+
+            _next = next;
+            _head = null;
 
             _staticIndex = 0;
             _localIndex = 0;
@@ -42,12 +49,18 @@ namespace CCompilerNet.Parser
             _localIndex = 0;
             _argIndex = 0;
             _thatIndex = 0;
-            SubRoutine = null;
+            _head = null;
         }
 
-        public void StartSubRoutine()
+        public SymbolTable StartSubRoutine()
         {
-            SubRoutine = new SymbolTable();
+            _head = new SymbolTable(this);
+            return _head;
+        }
+
+        public SymbolTable GetNext()
+        {
+            return _next;
         }
 
         public void Define(string name, string type, Kind kind)
@@ -85,12 +98,28 @@ namespace CCompilerNet.Parser
 
         public Symbol GetSymbol(string name)
         {
-            if (!_st.ContainsKey(name))
+            /*if (_next == null || !_next.SymbolExists(name))
             {
                 return null;
             }
+            if (!_st.ContainsKey(name))
+            {
+                return _next.GetSymbol(name);
+            }
 
-            return _st[name];
+            return _next.GetSymbol(name);*/
+
+            if (_next == null)
+            {
+                return SymbolExists(name) ? _st[name] : null;
+            }
+
+            if (SymbolExists(name))
+            {
+                return _st[name];
+            }
+
+            return _next.GetSymbol(name);
         }
 
         public void Define(string name, string type, Kind kind, LocalBuilder localBuilder)

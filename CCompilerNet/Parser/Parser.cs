@@ -169,6 +169,8 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
+
+
             EatToken();
             parent.Add(varDecl);
             return true;
@@ -385,6 +387,8 @@ namespace CCompilerNet.Parser
 
             EatToken();
 
+            _vm.SymbolTable = _vm.SymbolTable.StartSubRoutine();
+
             if (!CompileParms(funDecl))
             {
                 return false;
@@ -399,12 +403,15 @@ namespace CCompilerNet.Parser
 
             // vm translation
             _vm.FunctionTable.Define(funDecl);
-            _vm.CodeWriteFunction(SemanticHelper.GetFunctionId(funDecl));
+            _vm.CodeWriteFunction(funDecl);
 
             if (!CompileStmt(funDecl, true))
             {
                 return false;
             }
+
+            _vm.SymbolTable = _vm.SymbolTable.GetNext();
+            //_vm.CodeWriteFunction(funDecl);
 
             parent.Add(funDecl);
             return true;
@@ -1379,6 +1386,11 @@ namespace CCompilerNet.Parser
 
             EatToken();
 
+            if (write)
+            {
+                _vm.SymbolTable = _vm.SymbolTable.StartSubRoutine();
+            }
+
             if (!CompileLocalDecls(compoundStmt))
             {
                 return false;
@@ -1392,6 +1404,11 @@ namespace CCompilerNet.Parser
             if (!IsValueEquals("}"))
             {
                 return false;
+            }
+
+            if (write)
+            {
+                _vm.SymbolTable = _vm.SymbolTable.GetNext();
             }
 
             EatToken();

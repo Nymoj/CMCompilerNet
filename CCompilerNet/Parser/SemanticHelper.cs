@@ -21,6 +21,15 @@ namespace CCompilerNet.Parser
             return type.Value;
         }
 
+        /*public static ASTNode GetFunctionStmt(ASTNode root)
+        {
+            if (GetFunctionType(root) == "void")
+            {
+                return root.Children[2];
+            }
+            return root.Children[3];
+        }*/
+
         public static string GetFunctionId(ASTNode root)
         {
             if (GetFunctionType(root) != "void")
