@@ -48,7 +48,10 @@
     <Compile Include="Lex\Token.cs" />
     <Compile Include="Parser\AST\AST.cs" />
     <Compile Include="Parser\AST\ASTNode.cs" />
+    <Compile Include="Parser\FunctionSymbol.cs" />
+    <Compile Include="Parser\FunctionTable.cs" />
     <Compile Include="Parser\Parser.cs" />
+    <Compile Include="Parser\SemanticHelper.cs" />
     <Compile Include="Parser\Symbol.cs" />
     <Compile Include="Parser\SymbolTable.cs" />
     <Compile Include="Program.cs" />

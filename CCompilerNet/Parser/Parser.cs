@@ -397,13 +397,16 @@ namespace CCompilerNet.Parser
 
             EatToken();
 
+            // vm translation
+            _vm.FunctionTable.Define(funDecl);
+            _vm.CodeWriteFunction(SemanticHelper.GetFunctionId(funDecl));
+
             if (!CompileStmt(funDecl, true))
             {
                 return false;
             }
 
             parent.Add(funDecl);
-
             return true;
         }
 
@@ -465,7 +468,8 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
-            parent.Add(parmListTag);
+            //parent.Add(parmListTag);
+            parent += parmListTag;
             return true;
         }
 
@@ -597,7 +601,7 @@ namespace CCompilerNet.Parser
 
                     string id = _vm.GetID(expression);
                     // check if the id is declared
-                    if (_vm._st.GetSymbol(id) == null)
+                    if (_vm.SymbolTable.GetSymbol(id) == null)
                     {
                         Console.Error.WriteLine($"Error: {id} is not declared.");
                         Environment.Exit(-1);

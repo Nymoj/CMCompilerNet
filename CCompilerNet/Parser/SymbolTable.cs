@@ -18,7 +18,7 @@ namespace CCompilerNet.Parser
     public class SymbolTable
     {
         private Dictionary<string, Symbol> _st;
-        private SymbolTable _subRoutine;
+        private SymbolTable SubRoutine;
 
         private int _staticIndex;
         private int _localIndex;
@@ -35,9 +35,19 @@ namespace CCompilerNet.Parser
             _thatIndex = 0;
         }
 
+        public void Reset()
+        {
+            _st = new Dictionary<string, Symbol>();
+            _staticIndex = 0;
+            _localIndex = 0;
+            _argIndex = 0;
+            _thatIndex = 0;
+            SubRoutine = null;
+        }
+
         public void StartSubRoutine()
         {
-            _subRoutine = new SymbolTable();
+            SubRoutine = new SymbolTable();
         }
 
         public void Define(string name, string type, Kind kind)
