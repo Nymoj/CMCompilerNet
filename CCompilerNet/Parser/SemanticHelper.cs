@@ -21,14 +21,22 @@ namespace CCompilerNet.Parser
             return type.Value;
         }
 
-        /*public static ASTNode GetFunctionStmt(ASTNode root)
+        public static List<string> GetParmIds(ASTNode root)
         {
-            if (GetFunctionType(root) == "void")
+            List<string> result = new List<string>();
+            
+            foreach(ASTNode child in root.Children[1].Children)
             {
-                return root.Children[2];
+                result.Add(child.Token.Value);
             }
-            return root.Children[3];
-        }*/
+
+            return result;
+        }
+
+        public static string GetParmType(ASTNode root)
+        {
+            return root.Children[0].Token.Value;
+        }
 
         public static string GetFunctionId(ASTNode root)
         {

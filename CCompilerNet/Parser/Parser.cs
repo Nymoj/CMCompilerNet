@@ -499,6 +499,14 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
+            string type = SemanticHelper.GetParmType(parmTypeList);
+            List<string> ids = SemanticHelper.GetParmIds(parmTypeList);
+
+            foreach (string id in ids)
+            {
+                _vm.SymbolTable.Define(id, type, Kind.ARG);
+            }
+
             parent.Add(parmTypeList);
             return true;
         }
@@ -547,7 +555,8 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
-            parent.Add(parmIdListTag);
+            //parent.Add(parmIdListTag);
+            parent += parmIdListTag;
             return true;
         }
 

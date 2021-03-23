@@ -62,6 +62,7 @@ namespace CCompilerNet.CodeGen
         private void Push(string id)
         {
             Symbol symbol = SymbolTable.GetSymbol(id);
+            OpCode opCode = symbol.Kind == Kind.LOCAL ? OpCodes.Ldloc : OpCodes.Ldarg;
 
             if (symbol == null)
             {
@@ -69,25 +70,15 @@ namespace CCompilerNet.CodeGen
                 Environment.Exit(-1);
             }
 
-            _currILGen.Emit(OpCodes.Ldloc, symbol.LocalBuilder.LocalIndex);
+            _currILGen.Emit(opCode, symbol.Index);
         }
 
         public void CodeWriteFunction(ASTNode root)
         {
             string id = SemanticHelper.GetFunctionId(root);
-            //ASTNode stmt = SemanticHelper.GetFunctionStmt(root);
 
             _methodBuilder = FunctionTable.GetFunctionSymbol(id).MethodBuilder;
             _currILGen = _methodBuilder.GetILGenerator();
-
-            /*SymbolTable = SymbolTable.StartSubRoutine();
-
-            foreach (ASTNode child in stmt.Children)
-            {
-                //CodeWriteStmt(child);
-            }
-
-            SymbolTable = SymbolTable.GetNext();*/
         }
 
         public void Save(string path)
@@ -260,25 +251,25 @@ namespace CCompilerNet.CodeGen
                     switch (exp.Children[1].Token.Value)
                     {
                         case "=":
-                            _currILGen.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
+                            _currILGen.Emit(OpCodes.Stloc, symbol.Index);
                             break;
                         case "+=":
                             Push(GetID(exp.Children[0]));
                             _currILGen.Emit(OpCodes.Add);
-                            _currILGen.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
+                            _currILGen.Emit(OpCodes.Stloc, symbol.Index);
                             break;
                         case "-=":
                             //order of push is important so pushes the 2nd part again and pops the remaining one 
                             Push(GetID(exp.Children[0]));
                             CodeWriteExp(exp.Children[2]);
                             _currILGen.Emit(OpCodes.Sub);                                      
-                            _currILGen.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
+                            _currILGen.Emit(OpCodes.Stloc, symbol.Index);
                             _currILGen.Emit(OpCodes.Pop);
                             break;
                         case "*=":
                             Push(GetID(exp.Children[0]));
                             _currILGen.Emit(OpCodes.Mul);
-                            _currILGen.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
+                            _currILGen.Emit(OpCodes.Stloc, symbol.Index);
                             break;
                         case "/=":
                             //order of push is important so pushes the 2nd part again and pops the remaining one 
@@ -286,7 +277,7 @@ namespace CCompilerNet.CodeGen
                             Push(GetID(exp.Children[0]));
                             CodeWriteExp(exp.Children[2]);
                             _currILGen.Emit(OpCodes.Div);
-                            _currILGen.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
+                            _currILGen.Emit(OpCodes.Stloc, symbol.Index);
                             _currILGen.Emit(OpCodes.Pop);
                             break;
 
@@ -318,12 +309,12 @@ namespace CCompilerNet.CodeGen
                     switch (exp.Children[1].Token.Value)
                     {
                         case "=":
-                            _currILGen.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
+                            _currILGen.Emit(OpCodes.Stloc, symbol.Index);
                             break;
                         case "+=":
                             Push(GetID(exp.Children[0]));
                             _currILGen.Emit(OpCodes.Add);
-                            _currILGen.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
+                            _currILGen.Emit(OpCodes.Stloc, symbol.Index);
                             break;
                         case "-=":
                             //order of push is important so pushes the 2nd part again and pops the remaining one 
@@ -331,13 +322,13 @@ namespace CCompilerNet.CodeGen
                             Push(GetID(exp.Children[0]));
                             CodeWriteExp(exp.Children[2]);
                             _currILGen.Emit(OpCodes.Sub);
-                            _currILGen.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
+                            _currILGen.Emit(OpCodes.Stloc, symbol.Index);
                             _currILGen.Emit(OpCodes.Pop);
                             break;
                         case "*=":
                             Push(GetID(exp.Children[0]));
                             _currILGen.Emit(OpCodes.Mul);
-                            _currILGen.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
+                            _currILGen.Emit(OpCodes.Stloc, symbol.Index);
                             break;
                         case "/=":
                             //order of push is important so pushes the 2nd part again and pops the remaining one 
@@ -345,7 +336,7 @@ namespace CCompilerNet.CodeGen
                             Push(GetID(exp.Children[0]));
                             CodeWriteExp(exp.Children[2]);
                             _currILGen.Emit(OpCodes.Div);
-                            _currILGen.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
+                            _currILGen.Emit(OpCodes.Stloc, symbol.Index);
                             _currILGen.Emit(OpCodes.Pop);
                             break;
 
@@ -382,7 +373,7 @@ namespace CCompilerNet.CodeGen
                         _currILGen.Emit(OpCodes.Sub);
                     }
 
-                    _currILGen.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
+                    _currILGen.Emit(OpCodes.Stloc, symbol.Index);
 
                     return "int";
 

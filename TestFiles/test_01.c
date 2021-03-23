@@ -1,19 +1,9 @@
-int foo()
+int calc(int a, b)
 {
-	int b;
-	return 5;
+	return a + b; 
 }
 
 int main()
 {
-	int i : 0;
-	int a : 0;
-
-	while i < 5 do
-	{
-		a += foo();
-		i++;
-	}
-
-	return a;
+	return calc(1, 2);
 }
