@@ -1293,7 +1293,7 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
-            parent.Add(argListTag);
+            parent += (argListTag);
             return true;
         }
 

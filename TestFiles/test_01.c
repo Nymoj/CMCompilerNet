@@ -1,7 +1,7 @@
 int foo()
 {
 	int b;
-	return 0;
+	return 5;
 }
 
 int main()
@@ -9,9 +9,9 @@ int main()
 	int i : 0;
 	int a : 0;
 
-	while i < 200000 do
+	while i < 5 do
 	{
-		a += 2;
+		a += foo();
 		i++;
 	}
 

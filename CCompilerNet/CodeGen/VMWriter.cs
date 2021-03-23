@@ -423,6 +423,49 @@ namespace CCompilerNet.CodeGen
                 }
             }
 
+            if (exp.Tag == "call")
+            {
+                FunctionSymbol func = FunctionTable.GetFunctionSymbol(exp.Children[0].Token.Value);
+
+                if (func == null)
+                {
+                    Console.Error.WriteLine($"Error: function does not exist.");
+                    Environment.Exit(-1);
+                }
+
+                if (func.ParmTypeList != null) //checks if argument list is empty
+                {
+                    if (exp.Children.Count == 1)
+                    {
+                        Console.Error.WriteLine($"Error: missing parameters when calling a function.");
+                        Environment.Exit(-1);
+                    }
+
+                    /*CodeWriteExp(exp.Children[1].Children[0].Children[0]); //first argument of function
+
+                    if (exp.Children[1].Children[0].Children.Count > 1)     //checks if theres more than 1 arguments resulting in arg tag
+                    {
+                        foreach (ASTNode child in exp.Children[1].Children[0].Children[1].Children) //goes over all arg list tag members
+                        {
+                            CodeWriteExp(child);
+                        }
+                    }
+                    */
+
+                    for (int i = 0; i < exp.Children[1].Children.Count; i++)
+                    {
+                        if (CodeWriteExp(exp.Children[1].Children[i]) != func.ParmTypeList[i])
+                        {
+                            Console.Error.WriteLine($"Error: parameter type missmatch");
+                            Environment.Exit(-1);
+                        }
+                    }
+                }
+                _currILGen.Emit(OpCodes.Call, func.MethodBuilder);  //call func
+
+                return func.Type;
+            }
+
             if (exp.Tag == "operator")
             {
                 // Console.WriteLine(exp.Children[0].Token.Value);
@@ -573,23 +616,8 @@ namespace CCompilerNet.CodeGen
                     _currILGen.Emit(OpCodes.Ceq);
                 }
 
-                /* if (exp.Tag == "call")
-                 {
-                     if (exp.Children[1].Children[0].Children.Any()) //checks if argument list is empty
-                     {
-                         CodeWriteExp(exp.Children[1].Children[0].Children[0]); //first argument of function
-
-                         if (exp.Children[1].Children[0].Children.Count > 1)     //checks if theres more than 1 arguments resulting in arg tag
-                         {
-                             foreach (ASTNode child in exp.Children[1].Children[0].Children[1].Children) //goes over all arg list tag members
-                             {
-                                 CodeWriteExp(child);
-                             }
-                         }
-                     }
-                     Console.WriteLine("call " + exp.Children[0].Token.Value);  //call func
-                 }
-                */
+                
+                
 
             }
 
