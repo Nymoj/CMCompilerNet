@@ -83,9 +83,25 @@ namespace CCompilerNet.CodeGen
 
         public void Save(string path)
         {
+            if (FunctionTable.FunctionSymbolExists("main"))
+            {
+                _asmBuilder.SetEntryPoint(FunctionTable.GetFunctionSymbol("main").MethodBuilder, PEFileKinds.ConsoleApplication);
+            }
+            else
+            {
+                // creating an empty method to set an entry point
+                // to make the exe a valid program
+                _methodBuilder = _typeBuilder.DefineMethod(
+                "Main", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static,
+                typeof(void), new Type[] { typeof(string[]) });
+                _methodBuilder.GetILGenerator().Emit(OpCodes.Ret);
+                _asmBuilder.SetEntryPoint(_methodBuilder, PEFileKinds.ConsoleApplication);
+            }
+
             _typeBuilder.CreateType();
 
-            _asmBuilder.SetEntryPoint(_methodBuilder, PEFileKinds.ConsoleApplication);
+            //_asmBuilder.SetEntryPoint(_methodBuilder, PEFileKinds.ConsoleApplication);
+
             File.Delete(path);
             _asmBuilder.Save(path);
         }
