@@ -1,7 +1,6 @@
-
 int calc(int a, b)
 {
-	return a + b;
+	return a + b; 
 }
 
 int main()

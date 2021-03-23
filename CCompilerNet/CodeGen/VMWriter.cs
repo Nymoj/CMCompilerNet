@@ -433,6 +433,7 @@ namespace CCompilerNet.CodeGen
             if (exp.Tag == "call")
             {
                 FunctionSymbol func = FunctionTable.GetFunctionSymbol(exp.Children[0].Token.Value);
+                int num = exp.Children[1].Children[0].Children.Count;
 
                 if (func == null)
                 {
@@ -442,9 +443,9 @@ namespace CCompilerNet.CodeGen
 
                 if (func.ParmTypeList != null) //checks if argument list is empty
                 {
-                    if (exp.Children.Count == 1)
+                    if (num != func.ParmTypeList.Count)
                     {
-                        Console.Error.WriteLine($"Error: missing parameters when calling a function.");
+                        Console.Error.WriteLine($"Error: wrong number of parameters when calling a function.");
                         Environment.Exit(-1);
                     }
 
@@ -459,9 +460,9 @@ namespace CCompilerNet.CodeGen
                     }
                     */
 
-                    for (int i = 0; i < exp.Children[1].Children.Count; i++)
+                    for (int i = 0; i < num; i++)
                     {
-                        if (CodeWriteExp(exp.Children[1].Children[i]) != func.ParmTypeList[i])
+                        if (CodeWriteExp(exp.Children[1].Children[0].Children[i]) != func.ParmTypeList[i])
                         {
                             Console.Error.WriteLine($"Error: parameter type missmatch");
                             Environment.Exit(-1);
