@@ -459,6 +459,21 @@ namespace CCompilerNet.CodeGen
                         return "null";
                     }
 
+
+                    
+
+                    if (exp.Children[0].Token.Value == "put")
+                    {
+                        if (exp.Children.Count < 2)
+                        {
+                            Console.Error.WriteLine($"Error: put function requires arguments.");
+                            Environment.Exit(-1);
+                        }
+
+                        CodeWritePut(exp.Children[1].Children[0]);
+                        return null;
+                    }
+
                     Console.Error.WriteLine($"Error: function does not exist.");
                     Environment.Exit(-1);
                 }
@@ -660,6 +675,47 @@ namespace CCompilerNet.CodeGen
             }
 
             return null;
+        }
+        public void CodeWritePut(ASTNode args)
+        {
+            Symbol symbol = null;
+            foreach (ASTNode child in args.Children)
+            {
+                symbol = SymbolTable.GetSymbol(GetID(child));
+
+                if (symbol == null)
+                {
+                    Console.Error.WriteLine($"Error: parameters of put must be an existing variable.");
+                    Environment.Exit(-1);
+                }
+                _currILGen.Emit(OpCodes.Call, typeof(Console).GetMethod("ReadLine"));
+
+                switch (symbol.Type)
+                {
+                    case "int":
+                        _currILGen.Emit(OpCodes.Call, typeof(Int32).GetMethod("Parse", new Type[] { typeof(string) }) );
+                        break;
+                    case "char":
+                        _currILGen.Emit(OpCodes.Call, typeof(Char).GetMethod("Parse", new Type[] { typeof(string) }));
+                        break;
+                    case "bool":
+                        _currILGen.Emit(OpCodes.Call, typeof(Boolean).GetMethod("Parse", new Type[] { typeof(string) }));
+                        break;
+
+                }
+
+                switch (symbol.Kind)
+                {
+                    case Kind.LOCAL:
+                       _currILGen.Emit(OpCodes.Stloc, symbol.Index);
+                        break;   
+                    case Kind.ARG:
+                       _currILGen.Emit(OpCodes.Starg, symbol.Index);
+                        break;
+
+                }
+
+            }
         }
         public void CodeWritePrint(ASTNode args)
         {

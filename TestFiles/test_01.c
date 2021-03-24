@@ -5,6 +5,12 @@ int calc(int a, b)
 
 int main()
 {	
-	print(calc(5, ));
+	int a : 0;
+	int b : 0;
+
+	put(a, b);
+
+	print(calc(a, b));
+
 	return 0;
 }
