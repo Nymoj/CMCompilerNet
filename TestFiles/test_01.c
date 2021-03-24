@@ -5,12 +5,18 @@ int calc(int a, b)
 
 int main()
 {	
-	int a : 0;
-	int b : 0;
+    int i, n, t1 : 0, t2 : 1, nextTerm;
+    print("Enter the number of terms: ");
+    put(n);
+    print("Fibonacci Series: ");
 
-	put(a, b);
-
-	print(calc(a, b));
+    for i = 1 to n do 
+    {
+        print(t1);
+        nextTerm = t1 + t2;
+        t1 = t2;
+        t2 = nextTerm;
+    }
 
 	return 0;
 }

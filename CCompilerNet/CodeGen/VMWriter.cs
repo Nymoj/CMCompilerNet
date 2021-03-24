@@ -70,12 +70,17 @@ namespace CCompilerNet.CodeGen
                 Environment.Exit(-1);
             }
 
-            _currILGen.Emit(opCode, symbol.Index);
+            _currILGen.Emit(opCode, symbol.Kind == Kind.LOCAL ? symbol.LocalBuilder.LocalIndex : symbol.Index);
         }
 
         private void PushString(string str)
         {
-            _currILGen.Emit(OpCodes.Ldstr, str);    
+            _currILGen.Emit(OpCodes.Ldstr, str);
+        }
+
+        public LocalBuilder GetLocalBuilder(string type)
+        {
+            return _currILGen.DeclareLocal(ConvertToType(type, false)); //literally made for one line (check compileiterstmt)
         }
 
         public void CodeWriteFunction(ASTNode root)
@@ -218,7 +223,51 @@ namespace CCompilerNet.CodeGen
                 _currILGen.MarkLabel(toEnd);*/
             }
         }
+        public void CodeWriteForLoop(ASTNode root)
+        {
+            Label toLoopTop = _currILGen.DefineLabel();
+            Label toCondition = _currILGen.DefineLabel();
+            Symbol symbol = SymbolTable.GetSymbol(root.Children[1].Token.Value);
 
+            CodeWriteSimpleExp(root.Children[2].Children[0]); //Pushes first value of iter range into stack
+            _currILGen.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex); //pop into "i", which will always be the first local variable registered;
+
+            _currILGen.Emit(OpCodes.Br, toCondition);
+
+            // translating the statements
+            _currILGen.MarkLabel(toLoopTop);
+
+            CodeWriteStmt(root.Children[4]);
+            
+            _currILGen.Emit(OpCodes.Ldloc, symbol.LocalBuilder.LocalIndex);
+
+            if (root.Children[2].Children.Count > 2)   //checks if theres a "by"
+            {
+                CodeWriteSimpleExp(root.Children[2].Children[2]);  //push the size of each jump
+            }
+            else
+            {
+                Push(1);     //push the size of each jump
+            }
+
+            _currILGen.Emit(OpCodes.Add);
+            _currILGen.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);  //pop value into "i"
+
+
+
+            //translate condition
+            _currILGen.MarkLabel(toCondition);
+            _currILGen.Emit(OpCodes.Ldloc, symbol.LocalBuilder.LocalIndex); //push "i"
+            // i <= range
+            CodeWriteSimpleExp(root.Children[2].Children[1]); //push range
+            _currILGen.Emit(OpCodes.Cgt);
+            _currILGen.Emit(OpCodes.Ldc_I4_0);
+            _currILGen.Emit(OpCodes.Ceq);
+
+            _currILGen.Emit(OpCodes.Brtrue, toLoopTop);
+
+
+        }
         public void CodeWriteWhileLoop(ASTNode root)
         {
             Label toLoopTop = _currILGen.DefineLabel();
@@ -269,15 +318,17 @@ namespace CCompilerNet.CodeGen
                         Environment.Exit(-1);
                     }
 
+                    OpCode op = symbol.Kind == Kind.LOCAL ? OpCodes.Stloc : OpCodes.Starg;
+
                     switch (exp.Children[1].Token.Value)
                     {
                         case "=":
-                            _currILGen.Emit(OpCodes.Stloc, symbol.Index);
+                            _currILGen.Emit(op, symbol.Index);
                             break;
                         case "+=":
                             Push(GetID(exp.Children[0]));
                             _currILGen.Emit(OpCodes.Add);
-                            _currILGen.Emit(OpCodes.Stloc, symbol.Index);
+                            _currILGen.Emit(op, symbol.Index);
                             break;
                         case "-=":
                             //order of push is important so pushes the 2nd part again and pops the remaining one 
@@ -290,7 +341,7 @@ namespace CCompilerNet.CodeGen
                         case "*=":
                             Push(GetID(exp.Children[0]));
                             _currILGen.Emit(OpCodes.Mul);
-                            _currILGen.Emit(OpCodes.Stloc, symbol.Index);
+                            _currILGen.Emit(op, symbol.Index);
                             break;
                         case "/=":
                             //order of push is important so pushes the 2nd part again and pops the remaining one 
@@ -298,7 +349,7 @@ namespace CCompilerNet.CodeGen
                             Push(GetID(exp.Children[0]));
                             CodeWriteExp(exp.Children[2]);
                             _currILGen.Emit(OpCodes.Div);
-                            _currILGen.Emit(OpCodes.Stloc, symbol.Index);
+                            _currILGen.Emit(op, symbol.Index);
                             _currILGen.Emit(OpCodes.Pop);
                             break;
 
@@ -316,6 +367,7 @@ namespace CCompilerNet.CodeGen
                         Console.Error.WriteLine($"Error: {exp.Children[0].Token.Value} is not declared.");
                         Environment.Exit(-1);
                     }
+                    OpCode op = symbol.Kind == Kind.LOCAL ? OpCodes.Stloc : OpCodes.Starg;
 
                     type = CodeWriteExp(exp.Children[2]);
 
@@ -330,12 +382,12 @@ namespace CCompilerNet.CodeGen
                     switch (exp.Children[1].Token.Value)
                     {
                         case "=":
-                            _currILGen.Emit(OpCodes.Stloc, symbol.Index);
+                            _currILGen.Emit(op, symbol.Index);
                             break;
                         case "+=":
                             Push(GetID(exp.Children[0]));
                             _currILGen.Emit(OpCodes.Add);
-                            _currILGen.Emit(OpCodes.Stloc, symbol.Index);
+                            _currILGen.Emit(op, symbol.Index);
                             break;
                         case "-=":
                             //order of push is important so pushes the 2nd part again and pops the remaining one 
@@ -343,13 +395,13 @@ namespace CCompilerNet.CodeGen
                             Push(GetID(exp.Children[0]));
                             CodeWriteExp(exp.Children[2]);
                             _currILGen.Emit(OpCodes.Sub);
-                            _currILGen.Emit(OpCodes.Stloc, symbol.Index);
+                            _currILGen.Emit(op, symbol.Index);
                             _currILGen.Emit(OpCodes.Pop);
                             break;
                         case "*=":
                             Push(GetID(exp.Children[0]));
                             _currILGen.Emit(OpCodes.Mul);
-                            _currILGen.Emit(OpCodes.Stloc, symbol.Index);
+                            _currILGen.Emit(op, symbol.Index);
                             break;
                         case "/=":
                             //order of push is important so pushes the 2nd part again and pops the remaining one 
@@ -357,7 +409,7 @@ namespace CCompilerNet.CodeGen
                             Push(GetID(exp.Children[0]));
                             CodeWriteExp(exp.Children[2]);
                             _currILGen.Emit(OpCodes.Div);
-                            _currILGen.Emit(OpCodes.Stloc, symbol.Index);
+                            _currILGen.Emit(op, symbol.Index);
                             _currILGen.Emit(OpCodes.Pop);
                             break;
 
@@ -375,6 +427,8 @@ namespace CCompilerNet.CodeGen
                 if (op == "++" || op == "--")
                 {
                     Symbol symbol = SymbolTable.GetSymbol(GetID(exp.Children[0]));
+                    OpCode opCode = symbol.Kind == Kind.LOCAL ? OpCodes.Stloc : OpCodes.Starg;
+
                     if (symbol.Type != "int")
                     {
                         Console.Error.WriteLine($"Error: type missmatch");
@@ -394,7 +448,7 @@ namespace CCompilerNet.CodeGen
                         _currILGen.Emit(OpCodes.Sub);
                     }
 
-                    _currILGen.Emit(OpCodes.Stloc, symbol.Index);
+                    _currILGen.Emit(opCode, symbol.Index);
 
                     return "int";
 
@@ -676,7 +730,7 @@ namespace CCompilerNet.CodeGen
 
             return null;
         }
-<<<<<<< Updated upstream
+
         public void CodeWritePut(ASTNode args)
         {
             Symbol symbol = null;
@@ -718,9 +772,7 @@ namespace CCompilerNet.CodeGen
 
             }
         }
-=======
 
->>>>>>> Stashed changes
         public void CodeWritePrint(ASTNode args)
         {
             string type = CodeWriteExp(args.Children[0]);

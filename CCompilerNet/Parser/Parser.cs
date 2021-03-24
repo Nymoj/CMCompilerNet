@@ -1407,7 +1407,7 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
-            if (!CompileStmtList(compoundStmt))
+            if (!CompileStmtList(compoundStmt, write))
             {
                 return false;
             }
@@ -1549,10 +1549,20 @@ namespace CCompilerNet.Parser
                 iterStmt.Add(new ASTNode(_currentToken));
                 EatToken();
 
+                _vm.SymbolTable = _vm.SymbolTable.StartSubRoutine();
+                _vm.SymbolTable.Define(iterStmt.Children[1].Token.Value, "int", Kind.LOCAL, _vm.GetLocalBuilder("int"));
+
                 if (!CompileStmt(iterStmt, false))
                 {
                     return false;
                 }
+
+                if (write)
+                {
+                    _vm.CodeWriteForLoop(iterStmt);
+                }
+
+                _vm.SymbolTable = _vm.SymbolTable.GetNext();
 
                 parent.Add(iterStmt);
                 return true;
@@ -1666,11 +1676,11 @@ namespace CCompilerNet.Parser
         }
 
         // stmtList -> stmtList stmt | epsilon
-        private bool CompileStmtList(ASTNode parent)
+        private bool CompileStmtList(ASTNode parent, bool write)
         {
             ASTNode stmtList = new ASTNode("stmtList");
 
-            while (CompileStmt(stmtList, true)) ;
+            while (CompileStmt(stmtList, write)) ;
 
             if (stmtList.Children.Count() > 0)
             {
