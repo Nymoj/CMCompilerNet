@@ -1,11 +1,10 @@
-/*int calc(int n)
+int calc(int a, b)
 {
-	if (n < 4) then
-		return 4;
-	return calc(n - 1); 
-}*/
+	return a + b;
+}
 
-main()
-{
+int main()
+{	
+	print(calc(5, ));
 	return 0;
 }

@@ -73,6 +73,11 @@ namespace CCompilerNet.CodeGen
             _currILGen.Emit(opCode, symbol.Index);
         }
 
+        private void PushString(string str)
+        {
+            _currILGen.Emit(OpCodes.Ldstr, str);    
+        }
+
         public void CodeWriteFunction(ASTNode root)
         {
             string id = SemanticHelper.GetFunctionId(root);
@@ -407,6 +412,12 @@ namespace CCompilerNet.CodeGen
 
                 if (exp.Tag == "constant")
                 {
+                    if (value.Contains('"'))
+                    {
+                        value = value.Replace("\"", "");
+                        PushString(value);
+                        return "string";
+                    }
                     if (value == "false" || value == "true")
                     {
                         Push(bool.Parse(value));
@@ -433,16 +444,30 @@ namespace CCompilerNet.CodeGen
             if (exp.Tag == "call")
             {
                 FunctionSymbol func = FunctionTable.GetFunctionSymbol(exp.Children[0].Token.Value);
-                int num = exp.Children[1].Children[0].Children.Count;
+                int num = 0;
 
                 if (func == null)
                 {
+                    if (exp.Children[0].Token.Value == "print")
+                    {
+                        if (exp.Children.Count < 2)
+                        {
+                            Console.Error.WriteLine($"Error: print function requires arguments.");
+                            Environment.Exit(-1);
+                        }
+                        CodeWritePrint(exp.Children[1].Children[0]);
+                        return "null";
+                    }
+
                     Console.Error.WriteLine($"Error: function does not exist.");
                     Environment.Exit(-1);
                 }
+                
 
                 if (func.ParmTypeList != null) //checks if argument list is empty
                 {
+                    num = exp.Children[1].Children[0].Children.Count;
+
                     if (num != func.ParmTypeList.Count)
                     {
                         Console.Error.WriteLine($"Error: wrong number of parameters when calling a function.");
@@ -636,7 +661,31 @@ namespace CCompilerNet.CodeGen
 
             return null;
         }
+        public void CodeWritePrint(ASTNode args)
+        {
+            string type = CodeWriteExp(args.Children[0]);
+            List<Type> types = new List<Type> { ConvertToType(type, false) };
+            if (type != "string" && args.Children.Count > 1)
+            {
+                Console.Error.WriteLine($"Error: incorrect use of print");
+                Environment.Exit(-1);
+                
+            }
+            else if (args.Children.Count > 1 )
+            {
+                for (int i = 1; i < args.Children.Count; i++)
+                {
+                    type = CodeWriteExp(args.Children[i]);
 
+                    types.Add(ConvertToType(type, false));
+
+                    _currILGen.Emit(OpCodes.Box, types[i]);
+                }
+            }
+
+            _currILGen.Emit(OpCodes.Call, typeof(Console).GetMethod("WriteLine", types.ToArray()));
+
+        }
         public bool CodeWriteTag(ASTNode exp, string type)
         {
             string currType;
@@ -744,6 +793,8 @@ namespace CCompilerNet.CodeGen
                         return typeof(Boolean);
                     case "char":
                         return typeof(Char);
+                    case "string":
+                        return typeof(string);
                     default:
                         return null;
                 }
