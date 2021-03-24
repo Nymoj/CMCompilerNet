@@ -676,6 +676,7 @@ namespace CCompilerNet.CodeGen
 
             return null;
         }
+<<<<<<< Updated upstream
         public void CodeWritePut(ASTNode args)
         {
             Symbol symbol = null;
@@ -717,6 +718,9 @@ namespace CCompilerNet.CodeGen
 
             }
         }
+=======
+
+>>>>>>> Stashed changes
         public void CodeWritePrint(ASTNode args)
         {
             string type = CodeWriteExp(args.Children[0]);
@@ -765,7 +769,7 @@ namespace CCompilerNet.CodeGen
             return true;
         }
 
-        public void CodeWriteScopedVarDecl(ASTNode root, string name, string type)
+        public void CodeWriteScopedVarDecl(ASTNode root, ASTNode exp, string name)
         {
             Symbol symbol = SymbolTable.GetSymbol(name);
 
@@ -775,18 +779,58 @@ namespace CCompilerNet.CodeGen
                 Environment.Exit(-1);
             }
 
-            if (symbol.Type != type)
+            /*if (symbol.Type != type)
             {
                 Console.Error.WriteLine($"Error: type missmatch");
                 Environment.Exit(-1);
             }
 
-            if (root.Children.Count > 1)
+            /*if (root.Children.Count > 1)
             {
                 
             }
             else
             {
+                _currILGen.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
+            }
+
+
+            _currILGen.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
+
+            if (symbol.IsArray)
+            {
+
+            }
+            else
+            {
+                _currILGen.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
+            }*/
+
+            if (symbol.IsArray)
+            {
+                for (int i = 0; i < symbol.ArrayLength; i++)
+                {
+                    _currILGen.Emit(OpCodes.Ldloc, symbol.LocalBuilder.LocalIndex);
+                    _currILGen.Emit(OpCodes.Ldc_I4, i);
+                    string type = CodeWriteSimpleExp(exp);
+                    if (symbol.Type != type)
+                    {
+                        Console.Error.WriteLine($"Error: type missmatch");
+                        Environment.Exit(-1);
+                    }
+                    _currILGen.Emit(OpCodes.Stelem, ConvertToType(type, false));
+                }
+            }
+            else
+            {
+                string type = CodeWriteSimpleExp(exp);
+
+                if (symbol.Type != type)
+                {
+                    Console.Error.WriteLine($"Error: type missmatch");
+                    Environment.Exit(-1);
+                }
+
                 _currILGen.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
             }
         }
@@ -816,12 +860,15 @@ namespace CCompilerNet.CodeGen
             {
                 if (child.Children[0].Children.Count > 1)
                 {
-                    SymbolTable.Define(child.Children[0].Children[0].Token.Value, type, attribute, _currILGen.DeclareLocal(ConvertToType(type, true)));
+                    int arrayLength = int.Parse(child.Children[0].Children[1].Token.Value);
+                    string name = child.Children[0].Children[0].Token.Value;
 
+                    SymbolTable.Define(name, type, attribute, arrayLength, _currILGen.DeclareLocal(ConvertToType(type, true)));
+                    
                     // init the array
-                    _currILGen.Emit(OpCodes.Ldc_I4, int.Parse(child.Children[0].Children[1].Token.Value));
+                    _currILGen.Emit(OpCodes.Ldc_I4, arrayLength);
                     _currILGen.Emit(OpCodes.Newarr, ConvertToType(type, false));
-                    _currILGen.Emit(OpCodes.Stloc, SymbolTable.GetSymbol(child.Children[0].Children[0].Token.Value).Index);
+                    _currILGen.Emit(OpCodes.Stloc, SymbolTable.GetSymbol(name).Index);
                 }
                 else
                 {
@@ -832,7 +879,18 @@ namespace CCompilerNet.CodeGen
                 // the second child of varDeclInit is always the value
                 if (child.Children.Count > 1)
                 {
-                    CodeWriteScopedVarDecl(child.Children[0], child.Children[0].Children[0].Token.Value, CodeWriteExp(child.Children[1]));
+                    string name = child.Children[0].Children[0].Token.Value;
+                    Symbol symbol = SymbolTable.GetSymbol(name);
+
+                    /*if (symbol.IsArray)
+                    {
+                        
+                    }
+                    else
+                    {
+                        CodeWriteScopedVarDecl(child.Children[0], child.Children[1], name);
+                    }*/
+                    CodeWriteScopedVarDecl(child.Children[0], child.Children[1], name);
                 }
             }
         }

@@ -157,6 +157,41 @@ namespace CCompilerNet.Parser
             _st.Add(name, symbol);
         }
 
+        public void Define(string name, string type, Kind kind, int arrayLength, LocalBuilder localBuilder)
+        {
+            Symbol symbol = new Symbol(type, kind, arrayLength);
+
+            if (SymbolExists(name))
+            {
+                Console.WriteLine($"Error: {name} already exists in the current scope");
+                return;
+            }
+
+            switch (kind)
+            {
+                case Kind.STATIC:
+                    symbol.Index = _staticIndex;
+                    _staticIndex++;
+                    break;
+                case Kind.LOCAL:
+                    symbol.Index = _localIndex;
+                    localBuilder.SetLocalSymInfo(name);
+                    symbol.LocalBuilder = localBuilder;
+                    _localIndex++;
+                    break;
+                case Kind.ARG:
+                    symbol.Index = _argIndex;
+                    _argIndex++;
+                    break;
+                case Kind.THAT:
+                    symbol.Index = _thatIndex;
+                    _thatIndex++;
+                    break;
+            }
+
+            _st.Add(name, symbol);
+        }
+
         public bool SymbolExists(string name)
         {
             return _st.ContainsKey(name);

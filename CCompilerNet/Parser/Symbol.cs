@@ -13,12 +13,22 @@ namespace CCompilerNet.Parser
         public Kind Kind { get; set; }
         public int Index { get; set; }
         public LocalBuilder LocalBuilder { get; set; }
+        public bool IsArray { get; set; }
+        public int ArrayLength { get; set; }
 
         public Symbol(string type, Kind kind)
         {
             Type = type;
             Kind = kind;
             Index = 0;
+            IsArray = false;
+            ArrayLength = 0;
+        }
+
+        public Symbol(string type, Kind kind, int arrayLength) : this(type, kind)
+        {
+            IsArray = true;
+            ArrayLength = arrayLength;
         }
     }
 }

@@ -1294,6 +1294,8 @@ namespace CCompilerNet.Parser
 
             if (!CompileExp(argListTag))
             {
+                Console.Error.WriteLine("Error: exp expected");
+                Environment.Exit(-1);
                 return false;
             }
 
