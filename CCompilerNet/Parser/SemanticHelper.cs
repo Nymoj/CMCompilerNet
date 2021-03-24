@@ -53,17 +53,27 @@ namespace CCompilerNet.Parser
             ASTNode parmList = null;
             List<string> result = new List<string>();
 
-            if (GetFunctionType(root) == "void")
+            if (GetFunctionType(root) != "void")
             {
-                parmList = root.Children[1].Children[0];
-            }
-            else
-            {
-                if (root.Children.Count < 3)
+                if (root.Children.Count == 3)
+                {
+                    parmList = root.Children[2];
+                }
+                else
                 {
                     return null;
                 }
-                parmList = root.Children[2].Children[0];
+            }
+            else
+            {
+                if (root.Children.Count == 2)
+                {
+                    parmList = root.Children[1];
+                }
+                else
+                {
+                    return null;
+                }
             }
 
             // iterating through parmTypeLists

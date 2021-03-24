@@ -1,9 +1,11 @@
-int calc(int a, b)
+/*int calc(int n)
 {
-	return a + b; 
-}
+	if (n < 4) then
+		return 4;
+	return calc(n - 1); 
+}*/
 
-int main()
+main()
 {
-	return calc(1, 2);
+	return 0;
 }
