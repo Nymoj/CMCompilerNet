@@ -177,10 +177,6 @@ namespace CCompilerNet.CodeGen
             SymbolTable = SymbolTable.GetNext();
         }
 
-        public void CodeWriteIterStmt(ASTNode root)
-        {
-            
-        }
         public void CodeWriteSelectStmt(ASTNode root)
         {
             
@@ -513,9 +509,6 @@ namespace CCompilerNet.CodeGen
                         return "null";
                     }
 
-
-                    
-
                     if (exp.Children[0].Token.Value == "put")
                     {
                         if (exp.Children.Count < 2)
@@ -601,7 +594,14 @@ namespace CCompilerNet.CodeGen
                         _currILGen.Emit(OpCodes.Ldc_I4_0);
                         _currILGen.Emit(OpCodes.Ceq);
                         break;
-
+                    case "*":
+                        _currILGen.Emit(OpCodes.Ldlen);
+                        break;
+                    case "?":
+                        // considering an adress to a Random type object is already on the stack
+                        // with the argument
+                        _currILGen.Emit(OpCodes.Callvirt, typeof(Random).GetMethod("Next", new Type[] { typeof(Int32) }));
+                        break;
                 }
             }
 
@@ -703,9 +703,16 @@ namespace CCompilerNet.CodeGen
 
                 if (exp.Tag == "unaryExp")
                 {
+                    if (exp.Children[1].Children[0].Token.Value == "?")
+                    {
+                        _currILGen.Emit(OpCodes.Newobj, typeof(Random).GetConstructor(new Type[] { }));
+                    }
+
                     string type = CodeWriteExp(exp.Children[0]); //push exp
 
-                    CodeWriteExp(exp.Children[1]); // pushes operator  
+                    //CodeWriteExp(exp.Children[1]); // pushes operator
+
+                    CodeWriteExp(exp.Children[1]); // pushing the operator
 
                     return type;
                 }
@@ -716,11 +723,9 @@ namespace CCompilerNet.CodeGen
 
                     _currILGen.Emit(OpCodes.Ldc_I4_0);
                     _currILGen.Emit(OpCodes.Ceq);
+
+                    return type;
                 }
-
-                
-                
-
             }
 
             if (exp.Children.Count == 1)
@@ -831,33 +836,6 @@ namespace CCompilerNet.CodeGen
                 Environment.Exit(-1);
             }
 
-            /*if (symbol.Type != type)
-            {
-                Console.Error.WriteLine($"Error: type missmatch");
-                Environment.Exit(-1);
-            }
-
-            /*if (root.Children.Count > 1)
-            {
-                
-            }
-            else
-            {
-                _currILGen.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
-            }
-
-
-            _currILGen.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
-
-            if (symbol.IsArray)
-            {
-
-            }
-            else
-            {
-                _currILGen.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
-            }*/
-
             if (symbol.IsArray)
             {
                 for (int i = 0; i < symbol.ArrayLength; i++)
@@ -932,16 +910,8 @@ namespace CCompilerNet.CodeGen
                 if (child.Children.Count > 1)
                 {
                     string name = child.Children[0].Children[0].Token.Value;
-                    Symbol symbol = SymbolTable.GetSymbol(name);
+                    //Symbol symbol = SymbolTable.GetSymbol(name);
 
-                    /*if (symbol.IsArray)
-                    {
-                        
-                    }
-                    else
-                    {
-                        CodeWriteScopedVarDecl(child.Children[0], child.Children[1], name);
-                    }*/
                     CodeWriteScopedVarDecl(child.Children[0], child.Children[1], name);
                 }
             }
