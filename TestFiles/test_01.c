@@ -1,8 +1,6 @@
 int main()
 {	
 	int a[1] : 5;
-
-	a[0] -= 3;
-
+	print(? false);
 	return a[0];
 }

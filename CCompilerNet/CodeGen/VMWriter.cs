@@ -790,7 +790,37 @@ namespace CCompilerNet.CodeGen
                     case "?":
                         // considering an adress to a Random type object is already on the stack
                         // with the argument
+
+                        //_currILGen.Emit(OpCodes.Callvirt, typeof(Random).GetMethod("Next", new Type[] { typeof(Int32) }));
+                        Label toPositiveCase = _currILGen.DefineLabel();
+                        Label toEnd = _currILGen.DefineLabel();
+                        //Label toNegativeCase = _currILGen.DefineLabel();
+                        //Label toEnd = _currILGen.DefineLabel();
+
+                        _currILGen.Emit(OpCodes.Ldc_I4, 0);
+                        _currILGen.Emit(OpCodes.Clt);
+                        // if value is greater than zero, branch to the end
+                        /*_currILGen.Emit(OpCodes.Brfalse, toPositiveCase);
+
+                        _currILGen.Emit(OpCodes.Neg);
+                        _currILGen.Emit(OpCodes.Br, toNegativeCase);
+
                         _currILGen.Emit(OpCodes.Callvirt, typeof(Random).GetMethod("Next", new Type[] { typeof(Int32) }));
+                        _currILGen.MarkLabel(toPositiveCase);
+
+                        _currILGen.Emit(OpCodes.Callvirt, typeof(Random).GetMethod("Next", new Type[] { typeof(Int32) }));
+                        _currILGen.MarkLabel(toNegativeCase);
+                        _currILGen.Emit(OpCodes.Neg);*/
+                        _currILGen.Emit(OpCodes.Brfalse, toPositiveCase);
+                        _currILGen.Emit(OpCodes.Neg);
+                        _currILGen.Emit(OpCodes.Callvirt, typeof(Random).GetMethod("Next", new Type[] { typeof(Int32) }));
+                        _currILGen.Emit(OpCodes.Neg);
+                        _currILGen.Emit(OpCodes.Br, toEnd);
+
+                        _currILGen.MarkLabel(toPositiveCase);
+                        //_currILGen.Emit(OpCodes.Pop);
+                        _currILGen.Emit(OpCodes.Callvirt, typeof(Random).GetMethod("Next", new Type[] { typeof(Int32) }));
+                        _currILGen.MarkLabel(toEnd);
                         break;
                 }
             }
@@ -896,6 +926,14 @@ namespace CCompilerNet.CodeGen
                     if (exp.Children[1].Children[0].Token.Value == "?")
                     {
                         _currILGen.Emit(OpCodes.Newobj, typeof(Random).GetConstructor(new Type[] { }));
+                        // ? only works with ints
+                        string check = CodeWriteExp(exp.Children[0]);
+
+                        if (check != "int")
+                        {
+                            Console.Error.WriteLine($"Error: types mismatch");
+                            Environment.Exit(-1);
+                        }
                     }
 
                     string type = CodeWriteExp(exp.Children[0]); //push exp
