@@ -1,5 +1,8 @@
 int main()
-{
-	print(?200);
-	return 0;
+{	
+	int a[1] : 5;
+
+	a[0] -= 3;
+
+	return a[0];
 }

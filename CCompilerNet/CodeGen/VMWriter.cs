@@ -280,6 +280,7 @@ namespace CCompilerNet.CodeGen
             _currILGen.Emit(OpCodes.Brtrue, toLoopTop);
         }
 
+
         public string CodeWriteExp(ASTNode exp)
         {
             if (exp.Children.Count == 3 && exp.Children[1].Token != null)
@@ -297,16 +298,26 @@ namespace CCompilerNet.CodeGen
                     }
 
 
-                        // possibly will be removed
-                        // the condition is checked in the parser
-                        if (symbol == null)
-                        {
-                            Console.Error.WriteLine($"Error: {exp.Children[0].Token.Value} is not declared.");
-                            Environment.Exit(-1);
-                        }
+                    // possibly will be removed
+                    // the condition is checked in the parser
+                    if (symbol == null)
+                    {
+                        Console.Error.WriteLine($"Error: {exp.Children[0].Token.Value} is not declared.");
+                        Environment.Exit(-1);
+                    }
+
+                    if (symbol.IsArray)
+                    {
+                        Push(GetID(exp.Children[0]));
+                        PushIndex(exp.Children[0]);
+                    }
 
                     type = CodeWriteExp(exp.Children[2]);
-
+                    //Pop the value since the order of numbers is important
+                    if (exp.Children[1].Token.Value == "-=" || exp.Children[1].Token.Value == "/=")
+                    {
+                        _currILGen.Emit(OpCodes.Pop);
+                    }
 
                     if (type != symbol.Type)
                     {
@@ -316,40 +327,112 @@ namespace CCompilerNet.CodeGen
 
                     OpCode op = symbol.Kind == Kind.LOCAL ? OpCodes.Stloc : OpCodes.Starg;
 
+
+
                     switch (exp.Children[1].Token.Value)
                     {
                         case "=":
-                            _currILGen.Emit(op, symbol.Index);
+                            if (symbol.IsArray)
+                            {
+                                _currILGen.Emit(OpCodes.Stelem, ConvertToType(symbol.Type, false));
+                            }
+                            else
+                            {
+                                _currILGen.Emit(op, symbol.Index);
+                            }
                             break;
                         case "+=":
+
                             Push(GetID(exp.Children[0]));
+                            if (symbol.IsArray)
+                            {
+                                PushIndex(exp.Children[0]);
+                                _currILGen.Emit(OpCodes.Ldelem, ConvertToType(symbol.Type, false));
+                            }
+
                             _currILGen.Emit(OpCodes.Add);
-                            _currILGen.Emit(op, symbol.Index);
+
+                            if (symbol.IsArray)
+                            {
+                                _currILGen.Emit(OpCodes.Stelem, ConvertToType(symbol.Type, false));
+                            }
+                            else
+                            {
+                                _currILGen.Emit(op, symbol.Index);
+                            }
+
                             break;
                         case "-=":
                             //order of push is important so pushes the 2nd part again and pops the remaining one 
                             Push(GetID(exp.Children[0]));
+
+                            if (symbol.IsArray)
+                            {
+                                PushIndex(exp.Children[0]);
+                                _currILGen.Emit(OpCodes.Ldelem, ConvertToType(symbol.Type, false));
+                            }
+
                             CodeWriteExp(exp.Children[2]);
-                            _currILGen.Emit(OpCodes.Sub);                                      
-                            _currILGen.Emit(OpCodes.Stloc, symbol.Index);
-                            _currILGen.Emit(OpCodes.Pop);
+                            _currILGen.Emit(OpCodes.Sub);
+
+                            if (symbol.IsArray)
+                            {
+                                _currILGen.Emit(OpCodes.Stelem, ConvertToType(symbol.Type, false));
+                            }
+                            else
+                            {
+                                _currILGen.Emit(op, symbol.Index);
+                            }
+
                             break;
                         case "*=":
                             Push(GetID(exp.Children[0]));
+
+                            if (symbol.IsArray)
+                            {
+                                PushIndex(exp.Children[0]);
+                                _currILGen.Emit(OpCodes.Ldelem, ConvertToType(symbol.Type, false));
+                            }
+
                             _currILGen.Emit(OpCodes.Mul);
-                            _currILGen.Emit(op, symbol.Index);
+
+                            if (symbol.IsArray)
+                            {
+                                _currILGen.Emit(OpCodes.Stelem, ConvertToType(symbol.Type, false));
+                            }
+                            else
+                            {
+                                _currILGen.Emit(op, symbol.Index);
+                            }
+
                             break;
                         case "/=":
                             //order of push is important so pushes the 2nd part again and pops the remaining one 
 
                             Push(GetID(exp.Children[0]));
+
+                            if (symbol.IsArray)
+                            {
+                                PushIndex(exp.Children[0]);
+                                _currILGen.Emit(OpCodes.Ldelem, ConvertToType(symbol.Type, false));
+                            }
+
                             CodeWriteExp(exp.Children[2]);
                             _currILGen.Emit(OpCodes.Div);
-                            _currILGen.Emit(op, symbol.Index);
-                            _currILGen.Emit(OpCodes.Pop);
+
+                            if (symbol.IsArray)
+                            {
+                                _currILGen.Emit(OpCodes.Stelem, ConvertToType(symbol.Type, false));
+                            }
+                            else
+                            {
+                                _currILGen.Emit(op, symbol.Index);
+                            }
+
                             break;
 
                     }
+
 
                     return type;
                 }
@@ -367,7 +450,20 @@ namespace CCompilerNet.CodeGen
 
                     type = CodeWriteExp(exp.Children[2]);
 
-                    Push(GetID(exp.Children[2]));
+                    if (symbol.IsArray)
+                    {
+                        Push(GetID(exp.Children[0]));
+                        PushIndex(exp.Children[0]);
+                    }
+
+                    type = CodeWriteExp(exp.Children[2]);
+
+                    //Pop the value since the order of numbers is important
+                    if (exp.Children[1].Token.Value == "-=" || exp.Children[1].Token.Value == "/=")
+                    {
+                        _currILGen.Emit(OpCodes.Pop);
+                    }
+
 
                     if (type != symbol.Type)
                     {
@@ -378,35 +474,103 @@ namespace CCompilerNet.CodeGen
                     switch (exp.Children[1].Token.Value)
                     {
                         case "=":
-                            _currILGen.Emit(op, symbol.Index);
+                            if (symbol.IsArray)
+                            {
+                                _currILGen.Emit(OpCodes.Stelem, ConvertToType(symbol.Type, false));
+                            }
+                            else
+                            {
+                                _currILGen.Emit(op, symbol.Index);
+                            }
                             break;
                         case "+=":
+
                             Push(GetID(exp.Children[0]));
+                            if (symbol.IsArray)
+                            {
+                                PushIndex(exp.Children[0]);
+                                _currILGen.Emit(OpCodes.Ldelem, ConvertToType(symbol.Type, false));
+                            }
+
                             _currILGen.Emit(OpCodes.Add);
-                            _currILGen.Emit(op, symbol.Index);
+
+                            if (symbol.IsArray)
+                            {
+                                _currILGen.Emit(OpCodes.Stelem, ConvertToType(symbol.Type, false));
+                            }
+                            else
+                            {
+                                _currILGen.Emit(op, symbol.Index);
+                            }
+
                             break;
                         case "-=":
                             //order of push is important so pushes the 2nd part again and pops the remaining one 
-
                             Push(GetID(exp.Children[0]));
+
+                            if (symbol.IsArray)
+                            {
+                                PushIndex(exp.Children[0]);
+                                _currILGen.Emit(OpCodes.Ldelem, ConvertToType(symbol.Type, false));
+                            }
+
                             CodeWriteExp(exp.Children[2]);
                             _currILGen.Emit(OpCodes.Sub);
-                            _currILGen.Emit(op, symbol.Index);
-                            _currILGen.Emit(OpCodes.Pop);
+
+                            if (symbol.IsArray)
+                            {
+                                _currILGen.Emit(OpCodes.Stelem, ConvertToType(symbol.Type, false));
+                            }
+                            else
+                            {
+                                _currILGen.Emit(op, symbol.Index);
+                            }
+
                             break;
                         case "*=":
                             Push(GetID(exp.Children[0]));
+
+                            if (symbol.IsArray)
+                            {
+                                PushIndex(exp.Children[0]);
+                                _currILGen.Emit(OpCodes.Ldelem, ConvertToType(symbol.Type, false));
+                            }
+
                             _currILGen.Emit(OpCodes.Mul);
-                            _currILGen.Emit(op, symbol.Index);
+
+                            if (symbol.IsArray)
+                            {
+                                _currILGen.Emit(OpCodes.Stelem, ConvertToType(symbol.Type, false));
+                            }
+                            else
+                            {
+                                _currILGen.Emit(op, symbol.Index);
+                            }
+
                             break;
                         case "/=":
                             //order of push is important so pushes the 2nd part again and pops the remaining one 
 
                             Push(GetID(exp.Children[0]));
+
+                            if (symbol.IsArray)
+                            {
+                                PushIndex(exp.Children[0]);
+                                _currILGen.Emit(OpCodes.Ldelem, ConvertToType(symbol.Type, false));
+                            }
+
                             CodeWriteExp(exp.Children[2]);
                             _currILGen.Emit(OpCodes.Div);
-                            _currILGen.Emit(op, symbol.Index);
-                            _currILGen.Emit(OpCodes.Pop);
+
+                            if (symbol.IsArray)
+                            {
+                                _currILGen.Emit(OpCodes.Stelem, ConvertToType(symbol.Type, false));
+                            }
+                            else
+                            {
+                                _currILGen.Emit(op, symbol.Index);
+                            }
+
                             break;
 
                     }
@@ -432,6 +596,15 @@ namespace CCompilerNet.CodeGen
                     }
 
                     Push(GetID(exp.Children[0]));
+
+                    if (symbol.IsArray)
+                    {
+                        PushIndex(exp.Children[0]);
+                        Push(GetID(exp.Children[0]));
+                        PushIndex(exp.Children[0]);
+                        _currILGen.Emit(OpCodes.Ldelem, ConvertToType(symbol.Type, false));
+                    }
+
                     Push(1);
 
                     if (op == "++")
@@ -444,7 +617,16 @@ namespace CCompilerNet.CodeGen
                         _currILGen.Emit(OpCodes.Sub);
                     }
 
-                    _currILGen.Emit(opCode, symbol.Index);
+
+                    if (symbol.IsArray)
+                    {
+                        _currILGen.Emit(OpCodes.Stelem, ConvertToType(symbol.Type, false));
+                    }
+                    else
+                    {
+                        _currILGen.Emit(opCode, symbol.Index);
+                    }
+
 
                     return "int";
 
@@ -487,6 +669,14 @@ namespace CCompilerNet.CodeGen
                 {
                     // pushing the id
                     Push(value);
+
+                    if (exp.Children.Count == 4)  //if variable is an array
+                    {
+                        CodeWriteExp(exp.Children[2]);
+
+                        _currILGen.Emit(OpCodes.Ldelem, ConvertToType(SymbolTable.GetSymbol(value).Type, false));
+                    }
+
                     return SymbolTable.GetSymbol(value).Type;
                 }
             }
@@ -980,6 +1170,21 @@ namespace CCompilerNet.CodeGen
             }
 
             return GetID(root.Children[0]);
+        }
+
+        public string PushIndex(ASTNode root)
+        {
+            if (root.Tag == "mutable")
+            {
+                return CodeWriteSimpleExp(root.Children[2]);
+            }
+
+            if (root.Tag == "constant")
+            {
+                return null;
+            }
+
+            return PushIndex(root.Children[0]);
         }
     }
 }
