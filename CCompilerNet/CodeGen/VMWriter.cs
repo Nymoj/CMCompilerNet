@@ -280,6 +280,49 @@ namespace CCompilerNet.CodeGen
             _currILGen.Emit(OpCodes.Brtrue, toLoopTop);
         }
 
+        public string CodeWriteArray(Symbol arr2, Symbol arr1)
+        {
+            OpCode op1 = OpCodes.Pop;   //random assignment
+            OpCode op2 = OpCodes.Pop;
+
+            switch (arr1.Kind)
+            {
+                case Kind.LOCAL:
+                    op1 = OpCodes.Ldloc;
+                    break;
+                case Kind.ARG:
+                    op1 = OpCodes.Ldarg;
+                    break;
+            }
+
+            switch (arr2.Kind)
+            {
+                case Kind.LOCAL:
+                    op2 = OpCodes.Ldloc;
+                    break;
+                case Kind.ARG:
+                    op2 = OpCodes.Ldarg;
+                    break;
+            }
+
+            if (arr2.Type != arr1.Type)
+            {
+                Console.Error.WriteLine("Types mismatch");
+                Environment.Exit(-1);
+            }
+
+            for (int i = 0; i < arr1.ArrayLength && i < arr2.ArrayLength; i++)
+            {
+                _currILGen.Emit(op1, arr1.Index);
+                Push(i);
+                _currILGen.Emit(op2, arr2.Index);
+                Push(i);
+                _currILGen.Emit(OpCodes.Ldelem, ConvertToType(arr1.Type, false)); //push 2nd array value at index i
+                _currILGen.Emit(OpCodes.Stelem, ConvertToType(arr1.Type, false)); //pop into 1st array at index i
+            }
+
+            return arr1.Type;
+        }
 
         public string CodeWriteExp(ASTNode exp)
         {
@@ -309,7 +352,17 @@ namespace CCompilerNet.CodeGen
                     if (symbol.IsArray)
                     {
                         Push(GetID(exp.Children[0]));
-                        PushIndex(exp.Children[0]);
+
+                        if (PushIndex(exp.Children[0]) == "no index")   //trying to reset/copy an array
+                        {
+                            if (exp.Children[1].Token.Value != "=")
+                            {
+                                Console.Error.WriteLine("Wrong operator, must be = when working with the array itself");
+                                Environment.Exit(-1);
+                            }
+                            _currILGen.Emit(OpCodes.Pop);   //get rid of earlier push, since we wont be working with index anymore
+                            return CodeWriteArray(SymbolTable.GetSymbol(GetID(exp.Children[2])), symbol);
+                        }
                     }
 
                     type = CodeWriteExp(exp.Children[2]);
@@ -670,11 +723,13 @@ namespace CCompilerNet.CodeGen
                     // pushing the id
                     Push(value);
 
-                    if (exp.Children.Count == 4)  //if variable is an array
+                    if (exp.Children.Count == 4)  //if variable is an array with index
                     {
                         CodeWriteExp(exp.Children[2]);
 
                         _currILGen.Emit(OpCodes.Ldelem, ConvertToType(SymbolTable.GetSymbol(value).Type, false));
+
+                        return SymbolTable.GetSymbol(value).Type;
                     }
 
                     return SymbolTable.GetSymbol(value).Type;
@@ -1214,7 +1269,11 @@ namespace CCompilerNet.CodeGen
         {
             if (root.Tag == "mutable")
             {
-                return CodeWriteSimpleExp(root.Children[2]);
+                if (root.Children.Count > 2)
+                {
+                    return CodeWriteSimpleExp(root.Children[2]);
+                }
+                else return "no index";
             }
 
             if (root.Tag == "constant")
