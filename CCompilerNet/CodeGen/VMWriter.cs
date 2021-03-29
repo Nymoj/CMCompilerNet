@@ -328,7 +328,7 @@ namespace CCompilerNet.CodeGen
         {
             if (exp.Children.Count == 3 && exp.Children[1].Token != null)
             {
-                
+
                 if (exp.Children[2].Children.Count < 2)
                 {
                     Symbol symbol = SymbolTable.GetSymbol(GetID(exp.Children[0]));
@@ -485,152 +485,15 @@ namespace CCompilerNet.CodeGen
                             break;
 
                     }
-
-
                     return type;
                 }
                 else
                 {
-                    Symbol symbol = SymbolTable.GetSymbol(GetID(exp.Children[0]));
-                    string type;
-
-                    if (symbol == null)
-                    {
-                        Console.Error.WriteLine($"Error: {exp.Children[0].Token.Value} is not declared.");
-                        Environment.Exit(-1);
-                    }
-                    OpCode op = symbol.Kind == Kind.LOCAL ? OpCodes.Stloc : OpCodes.Starg;
-
-                    type = CodeWriteExp(exp.Children[2]);
-
-                    if (symbol.IsArray)
-                    {
-                        Push(GetID(exp.Children[0]));
-                        PushIndex(exp.Children[0]);
-                    }
-
-                    type = CodeWriteExp(exp.Children[2]);
-
-                    //Pop the value since the order of numbers is important
-                    if (exp.Children[1].Token.Value == "-=" || exp.Children[1].Token.Value == "/=")
-                    {
-                        _currILGen.Emit(OpCodes.Pop);
-                    }
-
-
-                    if (type != symbol.Type)
-                    {
-                        Console.Error.WriteLine($"Error: type missmatch");
-                        Environment.Exit(-1);
-                    }
-
-                    switch (exp.Children[1].Token.Value)
-                    {
-                        case "=":
-                            if (symbol.IsArray)
-                            {
-                                _currILGen.Emit(OpCodes.Stelem, ConvertToType(symbol.Type, false));
-                            }
-                            else
-                            {
-                                _currILGen.Emit(op, symbol.Index);
-                            }
-                            break;
-                        case "+=":
-
-                            Push(GetID(exp.Children[0]));
-                            if (symbol.IsArray)
-                            {
-                                PushIndex(exp.Children[0]);
-                                _currILGen.Emit(OpCodes.Ldelem, ConvertToType(symbol.Type, false));
-                            }
-
-                            _currILGen.Emit(OpCodes.Add);
-
-                            if (symbol.IsArray)
-                            {
-                                _currILGen.Emit(OpCodes.Stelem, ConvertToType(symbol.Type, false));
-                            }
-                            else
-                            {
-                                _currILGen.Emit(op, symbol.Index);
-                            }
-
-                            break;
-                        case "-=":
-                            //order of push is important so pushes the 2nd part again and pops the remaining one 
-                            Push(GetID(exp.Children[0]));
-
-                            if (symbol.IsArray)
-                            {
-                                PushIndex(exp.Children[0]);
-                                _currILGen.Emit(OpCodes.Ldelem, ConvertToType(symbol.Type, false));
-                            }
-
-                            CodeWriteExp(exp.Children[2]);
-                            _currILGen.Emit(OpCodes.Sub);
-
-                            if (symbol.IsArray)
-                            {
-                                _currILGen.Emit(OpCodes.Stelem, ConvertToType(symbol.Type, false));
-                            }
-                            else
-                            {
-                                _currILGen.Emit(op, symbol.Index);
-                            }
-
-                            break;
-                        case "*=":
-                            Push(GetID(exp.Children[0]));
-
-                            if (symbol.IsArray)
-                            {
-                                PushIndex(exp.Children[0]);
-                                _currILGen.Emit(OpCodes.Ldelem, ConvertToType(symbol.Type, false));
-                            }
-
-                            _currILGen.Emit(OpCodes.Mul);
-
-                            if (symbol.IsArray)
-                            {
-                                _currILGen.Emit(OpCodes.Stelem, ConvertToType(symbol.Type, false));
-                            }
-                            else
-                            {
-                                _currILGen.Emit(op, symbol.Index);
-                            }
-
-                            break;
-                        case "/=":
-                            //order of push is important so pushes the 2nd part again and pops the remaining one 
-
-                            Push(GetID(exp.Children[0]));
-
-                            if (symbol.IsArray)
-                            {
-                                PushIndex(exp.Children[0]);
-                                _currILGen.Emit(OpCodes.Ldelem, ConvertToType(symbol.Type, false));
-                            }
-
-                            CodeWriteExp(exp.Children[2]);
-                            _currILGen.Emit(OpCodes.Div);
-
-                            if (symbol.IsArray)
-                            {
-                                _currILGen.Emit(OpCodes.Stelem, ConvertToType(symbol.Type, false));
-                            }
-                            else
-                            {
-                                _currILGen.Emit(op, symbol.Index);
-                            }
-
-                            break;
-
-                    }
-
-                    return type;
+                    Console.Error.WriteLine("Can only use 1 operator in an expression");
+                    Environment.Exit(-1);
                 }
 
+                
 
             }
 
