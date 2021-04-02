@@ -924,7 +924,12 @@ namespace CCompilerNet.Parser
         {
             ASTNode minMaxOp = new ASTNode("minMaxOp");
 
-            if (_currentToken.Value != ":>:" && _currentToken.Value != ":<:")
+            /*if (_currentToken.Value != ":>:" && _currentToken.Value != ":<:")
+            {
+                return false;
+            }*/
+
+            if (!IsValueEquals(":>:") && !IsValueEquals(":<:"))
             {
                 return false;
             }
@@ -988,7 +993,12 @@ namespace CCompilerNet.Parser
         {
             ASTNode sumOp = new ASTNode("operator");
 
-            if (_currentToken.Value != "+" && _currentToken.Value != "-")
+            /*if (_currentToken.Value != "+" && _currentToken.Value != "-")
+            {
+                return false;
+            }*/
+
+            if (!IsValueEquals("+") && !IsValueEquals("-"))
             {
                 return false;
             }
@@ -1051,7 +1061,12 @@ namespace CCompilerNet.Parser
         {
             ASTNode mulOp = new ASTNode("operator");
 
-            if (_currentToken.Value != "*" && _currentToken.Value != "/" && _currentToken.Value != "%")
+            /*if (_currentToken.Value != "*" && _currentToken.Value != "/" && _currentToken.Value != "%")
+            {
+                return false;
+            }*/
+
+            if (!IsValueEquals("*") && !IsValueEquals("/") && !IsValueEquals("%"))
             {
                 return false;
             }
@@ -1095,7 +1110,12 @@ namespace CCompilerNet.Parser
         {
             ASTNode unaryOp = new ASTNode("unaryOperator");
 
-            if (_currentToken.Value != "-" && _currentToken.Value != "*" && _currentToken.Value != "?")
+            /*if (_currentToken.Value != "-" && _currentToken.Value != "*" && _currentToken.Value != "?")
+            {
+                return false;
+            }*/
+
+            if (!IsValueEquals("-") && !IsValueEquals("*") && !IsValueEquals("?"))
             {
                 return false;
             }
@@ -1372,6 +1392,7 @@ namespace CCompilerNet.Parser
 
             if (!IsValueEquals(";"))
             {
+                ErrorHandler.UnexpectedTokenError(";", _currentToken);
                 return false;
             }
 
@@ -1414,6 +1435,7 @@ namespace CCompilerNet.Parser
 
             if (!IsValueEquals("}"))
             {
+                ErrorHandler.UnexpectedTokenError("}", _currentToken);
                 return false;
             }
 
@@ -1446,6 +1468,7 @@ namespace CCompilerNet.Parser
 
             if (!IsValueEquals("then"))
             {
+                ErrorHandler.UnexpectedTokenError("then", _currentToken);
                 return false;
             }
 
@@ -1494,6 +1517,7 @@ namespace CCompilerNet.Parser
 
                 if (!IsValueEquals("do"))
                 {
+                    ErrorHandler.UnexpectedTokenError("do", _currentToken);
                     return false;
                 }
 
@@ -1522,6 +1546,7 @@ namespace CCompilerNet.Parser
 
                 if (!IsTokenTypeEquals(TokenType.ID))
                 {
+                    ErrorHandler.UnexpectedTokenTypeError(TokenType.ID, _currentToken);
                     return false;
                 }
 
@@ -1531,6 +1556,7 @@ namespace CCompilerNet.Parser
 
                 if (!IsValueEquals("="))
                 {
+                    ErrorHandler.UnexpectedTokenError("=", _currentToken);
                     return false;
                 }
 
@@ -1543,6 +1569,7 @@ namespace CCompilerNet.Parser
 
                 if (!IsValueEquals("do"))
                 {
+                    ErrorHandler.UnexpectedTokenError("do", _currentToken);
                     return false;
                 }
 
@@ -1634,6 +1661,7 @@ namespace CCompilerNet.Parser
 
                 if (!IsValueEquals(";"))
                 {
+                    ErrorHandler.UnexpectedTokenError(";", _currentToken);
                     return false;
                 }
 
@@ -1667,6 +1695,7 @@ namespace CCompilerNet.Parser
 
             if (!IsValueEquals(";"))
             {
+                ErrorHandler.UnexpectedTokenError(";", _currentToken);
                 return false;
             }
             EatToken();
@@ -1703,94 +1732,6 @@ namespace CCompilerNet.Parser
             }
 
             return true;
-        }
-
-        #endregion
-
-        #region CodeGen
-
-        public void codeWriteExp(ASTNode exp)
-        {
-            /*if (exp.Children.Any())
-            {
-                foreach (ASTNode child in exp.Children)
-                {
-                    codeWriteExp(child);
-                }
-            }
-
-            if (exp.Token == null)
-            {
-                return false;
-            }
-           if (exp.Token.Type != TokenType.Operator)
-            {
-                Console.WriteLine("push " + exp.Token.Value);
-                return true;
-            }
-            else
-            {
-                Console.WriteLine(exp.Token.Value);
-                return true;
-            }*/
-
-            if (exp.Tag == "constant" || exp.Tag == "mutable")
-            {
-                Console.WriteLine("push " + exp.Children[0].Token.Value);
-            }
-
-            if (exp.Tag == "operator")
-            {
-                Console.WriteLine(exp.Children[0].Token.Value);
-            }
-
-            if (exp.Children.Count > 1)
-            {
-                if (exp.Tag == "mulExpression" || exp.Tag == "sumExpression")
-                {
-                    codeWriteExp(exp.Children[0]);    //push 1st exp
-
-                    codeWriteExp(exp.Children[1]);        //code generation of tag
-
-                }
-
-                if (exp.Tag == "mulExpressionTag" || exp.Tag == "sumExpressionTag")
-                {
-                    foreach (ASTNode child in exp.Children)
-                    {
-                        codeWriteExp(child);
-                    }
-                }
-
-                if (exp.Tag == "unaryExp")
-                {
-                    codeWriteExp(exp.Children[0]); //push exp
-
-                    Console.WriteLine(exp.Children[1].Children[0].Token.Value); //push operator
-                }
-
-                if (exp.Tag == "call")
-                {
-                    if (exp.Children[1].Children[0].Children.Any()) //checks if argument list is empty
-                    {
-                        codeWriteExp(exp.Children[1].Children[0].Children[0]); //first argument of function
-
-                        if (exp.Children[1].Children[0].Children.Count > 1)     //checks if theres more than 1 arguments resulting in arg tag
-                        {
-                            foreach (ASTNode child in exp.Children[1].Children[0].Children[1].Children) //goes over all arg list tag members
-                            {
-                                codeWriteExp(child);
-                            }
-                        }
-                    }
-                    Console.WriteLine("call " + exp.Children[0].Token.Value);  //call func
-                }
-            }
-
-            if (exp.Children.Count == 1)
-            {
-                codeWriteExp(exp.Children[0]);     //move over to next member
-            }
         }
 
         #endregion

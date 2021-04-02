@@ -16,6 +16,7 @@ namespace CCompilerNet
         private int _pos;
         private Queue<Token> _buffer;
         private bool _isPeeking;
+        private int _lineCount;
 
         public Lexer(string path)
         {
@@ -26,6 +27,7 @@ namespace CCompilerNet
             _line = _stream.ReadLine();
             _pos = 0;
             _commentMode = false;
+            _lineCount = 1;
         }
 
         public Token GetNextToken()
@@ -89,6 +91,8 @@ namespace CCompilerNet
             {
                 token = new Token(TokenType.Operator, CutTokenFromLine(startPos));
             }
+
+            token.Line = _lineCount;
 
             return token;
         }
@@ -489,6 +493,7 @@ namespace CCompilerNet
             {
                 _line = _stream.ReadLine();
                 _pos = 0;
+                _lineCount++;
                 SkipWhiteSpace();
                 return true;
             }

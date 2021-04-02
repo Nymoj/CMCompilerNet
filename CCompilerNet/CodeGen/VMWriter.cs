@@ -243,6 +243,11 @@ namespace CCompilerNet.CodeGen
             // otherwise stmts are the only children
             int index = 0;
 
+            if (root.Children.Count == 0)
+            {
+                return;
+            }
+
             if (root.Children[0].Tag == "localDecls")
             {
                 foreach (ASTNode child in root.Children[0].Children)

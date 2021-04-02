@@ -21,6 +21,7 @@ namespace CCompilerNet.Lex
     {
         public TokenType Type { get; set; }
         public string Value { get; set; }
+        public int Line { get; set; }
 
         public Token(TokenType type, string value)
         {
