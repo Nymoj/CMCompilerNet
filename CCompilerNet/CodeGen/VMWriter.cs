@@ -30,13 +30,13 @@ namespace CCompilerNet.CodeGen
         // function table
         public FunctionTable FunctionTable { get; }
 
-        public VMWriter()
+        public VMWriter(string output)
         {
             _domain = AppDomain.CurrentDomain;
             _asmBuilder = _domain.DefineDynamicAssembly(
                 new AssemblyName("MyASM"), AssemblyBuilderAccess.Save);
             _moduleBuilder = _asmBuilder.DefineDynamicModule(
-                "MyASM", "output.exe", true);
+                "MyASM", output, true);
             _typeBuilder = _moduleBuilder.DefineType("Program",
                 TypeAttributes.Class | TypeAttributes.Public);
             /*_methodBuilder = _typeBuilder.DefineMethod(

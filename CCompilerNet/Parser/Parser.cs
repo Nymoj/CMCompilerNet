@@ -22,12 +22,12 @@ namespace CCompilerNet.Parser
             _filePath = other._filePath;
         }
 
-        public Parser(string filePath)
+        public Parser(string filePath, string fileName)
         {
             _ast = null;
             _lexer = new Lexer(filePath);
             _currentToken = _lexer.GetNextToken();
-            _vm = new VMWriter();
+            _vm = new VMWriter(fileName);
         }
 
         private void EatToken()
