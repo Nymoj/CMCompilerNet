@@ -9,6 +9,12 @@ namespace CCompilerNet
 {
     public static class ErrorHandler
     {
+        public static void Error(string errorMessage)
+        {
+            Console.Error.WriteLine($"Error: {errorMessage}");
+            Environment.Exit(-1);
+        }
+
         #region Syntax Errors
 
         /// <summary>

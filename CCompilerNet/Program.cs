@@ -19,7 +19,6 @@ namespace CCompilerNet
 
             for (int i = 0; i < args.Length; i++)
             {
-                Console.WriteLine(args[i]);
 
                 if (args[i].Contains("-output="))
                 {
@@ -41,6 +40,7 @@ namespace CCompilerNet
 
             AST ast = parser._ast;
             parser._vm.Save(Path.GetFileName(output));
+            File.Delete(output);
             File.Move(Path.GetFileName(output), output);
             outputFile.Write(ast?.ToString());
             outputFile.Close(); 

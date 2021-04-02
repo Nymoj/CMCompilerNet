@@ -612,7 +612,7 @@ namespace CCompilerNet.Parser
                 {
                     if (_currentToken == null)
                     {
-                        return false;
+                        ErrorHandler.UnexpectedTokenError("=", _currentToken);                 
                     }
 
                     string id = _vm.GetID(expression);
@@ -634,7 +634,7 @@ namespace CCompilerNet.Parser
                             return true;
                         }
 
-                        return false;
+                        ErrorHandler.UnexpectedTokenError("expression", _currentToken);;
 
                     }
 
@@ -646,12 +646,13 @@ namespace CCompilerNet.Parser
                         EatToken();
                         return true;
                     }
+
+                   // ErrorHandler.UnexpectedTokenError("operator", _currentToken); 
                 }
 
                 parent.Add(expression);
                 return true;
             }
-
             return false;
 
             /*if (CompileMutable(expression))
@@ -816,6 +817,7 @@ namespace CCompilerNet.Parser
 
                 if (!CompileUnaryRelExp(unaryRelExp))
                 {
+                    ErrorHandler.UnexpectedTokenError("expression", _currentToken);
                     return false;
                 }
 
@@ -974,6 +976,7 @@ namespace CCompilerNet.Parser
 
             if (!CompileMulExp(sumExpTag))
             {
+                ErrorHandler.UnexpectedTokenError("expression", _currentToken);
                 return false;
             }
 
@@ -1043,6 +1046,7 @@ namespace CCompilerNet.Parser
 
             if (!CompileUnaryExp(mulExpTag))
             {
+                ErrorHandler.UnexpectedTokenError("expression", _currentToken);
                 return false;
             }
 
@@ -1089,6 +1093,7 @@ namespace CCompilerNet.Parser
             {
                 if (!CompileUnaryExp(unaryExp))
                 {
+                    ErrorHandler.UnexpectedTokenError("expression", _currentToken);
                     return false;
                 }
 
@@ -1146,7 +1151,7 @@ namespace CCompilerNet.Parser
                 parent.Add(factor);
                 return true;
             }
-
+            
             return false;
         }
 
@@ -1161,6 +1166,7 @@ namespace CCompilerNet.Parser
 
                 if (!CompileExp(immutable))
                 {
+                    ErrorHandler.UnexpectedTokenError("immutable", _currentToken);
                     return false;
                 }
 
@@ -1291,6 +1297,7 @@ namespace CCompilerNet.Parser
             if (!CompileExp(argList))
             {
                 return false;
+                
             }
 
             if (!CompileArgListTag(argList))
@@ -1314,8 +1321,7 @@ namespace CCompilerNet.Parser
 
             if (!CompileExp(argListTag))
             {
-                Console.Error.WriteLine("Error: exp expected");
-                Environment.Exit(-1);
+                ErrorHandler.UnexpectedTokenError("expression", _currentToken);
                 return false;
             }
 
