@@ -1,4 +1,5 @@
-﻿using CCompilerNet.Lex;
+﻿using CCompilerNet.CodeGen;
+using CCompilerNet.Lex;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,13 +22,14 @@ namespace CCompilerNet.Parser
             return type.Value;
         }
 
-        public static List<string> GetParmIds(ASTNode root)
+        public static Dictionary<string, bool> GetParmIds(ASTNode root)
         {
-            List<string> result = new List<string>();
+            // holds the id as the key and bool to identify if the id is an array type
+            Dictionary<string, bool> result = new Dictionary<string, bool>();
             
             foreach(ASTNode child in root.Children[1].Children)
             {
-                result.Add(child.Token.Value);
+                result.Add(child.Token.Value, child.Children.Count > 0);
             }
 
             return result;
@@ -61,7 +63,7 @@ namespace CCompilerNet.Parser
                 }
                 else
                 {
-                    return null;
+                    return result;
                 }
             }
             else
@@ -72,7 +74,7 @@ namespace CCompilerNet.Parser
                 }
                 else
                 {
-                    return null;
+                    return result;
                 }
             }
 
@@ -82,7 +84,7 @@ namespace CCompilerNet.Parser
                 //result.Add(child.Children[0].Token.Value);
                 for (int i = 0; i < child.Children[1].Children.Count; i++)
                 {
-                    result.Add(child.Children[0].Token.Value);
+                    result.Add(child.Children[0].Token.Value + " arr");
                 }
             }
 

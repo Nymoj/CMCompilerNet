@@ -169,7 +169,7 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
-
+            _vm.AddSymbolsFromVarDecl(varDecl);
 
             EatToken();
             parent.Add(varDecl);
@@ -500,11 +500,11 @@ namespace CCompilerNet.Parser
             }
 
             string type = SemanticHelper.GetParmType(parmTypeList);
-            List<string> ids = SemanticHelper.GetParmIds(parmTypeList);
+            Dictionary<string, bool> ids = SemanticHelper.GetParmIds(parmTypeList);
 
-            foreach (string id in ids)
+            foreach (string id in ids.Keys)
             {
-                _vm.SymbolTable.Define(id, type, Kind.ARG);
+                _vm.SymbolTable.Define(id, type, Kind.ARG, ids[id]);
             }
 
             parent.Add(parmTypeList);
@@ -1377,7 +1377,7 @@ namespace CCompilerNet.Parser
 
             if (write)
             {
-                _vm.CodeWriteExp(expStmt);
+                _vm.CodeWriteExp(expStmt.Children[0]);
             }
 
             EatToken();

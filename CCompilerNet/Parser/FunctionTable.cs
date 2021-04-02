@@ -37,9 +37,13 @@ namespace CCompilerNet.Parser
             string type = SemanticHelper.GetFunctionType(root);
             string id = SemanticHelper.GetFunctionId(root);
             List<string> parmTypeList = SemanticHelper.GetFunctionParmTypes(root);
+            List<string> clearParmTypeList = new List<string>(parmTypeList);
+
+            // clearing the arr suffix
+            clearParmTypeList = clearParmTypeList.Select((x) => x.Replace(" arr", "")).ToList();
 
             _fs.Add(id, new FunctionSymbol(
-                    parmTypeList,
+                    clearParmTypeList,
                     type, 
                     _typeBuilder.DefineMethod(
                         id, 

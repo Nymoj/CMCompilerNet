@@ -13,6 +13,7 @@ namespace CCompilerNet.Parser
         public Kind Kind { get; set; }
         public int Index { get; set; }
         public LocalBuilder LocalBuilder { get; set; }
+        public FieldBuilder FieldBuilder { get; set; }
         public bool IsArray { get; set; }
         public int ArrayLength { get; set; }
 

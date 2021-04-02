@@ -12,7 +12,7 @@ namespace CCompilerNet.Parser
         STATIC,
         LOCAL,
         ARG,
-        THAT
+        GLOBAL
     }
 
     public class SymbolTable
@@ -27,7 +27,7 @@ namespace CCompilerNet.Parser
         private int _staticIndex;
         private int _localIndex;
         private int _argIndex;
-        private int _thatIndex;
+        private int _globalIndex;
 
         public SymbolTable(SymbolTable next)
         {
@@ -39,7 +39,7 @@ namespace CCompilerNet.Parser
             _staticIndex = 0;
             _localIndex = 0;
             _argIndex = 0;
-            _thatIndex = 0;
+            _globalIndex = 0;
         }
 
         public void Reset()
@@ -48,7 +48,7 @@ namespace CCompilerNet.Parser
             _staticIndex = 0;
             _localIndex = 0;
             _argIndex = 0;
-            _thatIndex = 0;
+            _globalIndex = 0;
             _head = null;
         }
 
@@ -63,9 +63,11 @@ namespace CCompilerNet.Parser
             return _next;
         }
 
-        public void Define(string name, string type, Kind kind)
+        public void Define(string name, string type, Kind kind, bool isArray = false)
         {
             Symbol symbol = new Symbol(type, kind);
+            // if passed as an argument, must save as an array type
+            symbol.IsArray = isArray;
 
             if (SymbolExists(name))
             {
@@ -87,9 +89,9 @@ namespace CCompilerNet.Parser
                     symbol.Index = _argIndex;
                     _argIndex++;
                     break;
-                case Kind.THAT:
-                    symbol.Index = _thatIndex;
-                    _thatIndex++;
+                case Kind.GLOBAL:
+                    symbol.Index = _globalIndex;
+                    _globalIndex++;
                     break;
             }
 
@@ -148,9 +150,9 @@ namespace CCompilerNet.Parser
                     symbol.Index = _argIndex;
                     _argIndex++;
                     break;
-                case Kind.THAT:
-                    symbol.Index = _thatIndex;
-                    _thatIndex++;
+                case Kind.GLOBAL:
+                    symbol.Index = _globalIndex;
+                    _globalIndex++;
                     break;
             }
 
@@ -183,9 +185,81 @@ namespace CCompilerNet.Parser
                     symbol.Index = _argIndex;
                     _argIndex++;
                     break;
-                case Kind.THAT:
-                    symbol.Index = _thatIndex;
-                    _thatIndex++;
+                case Kind.GLOBAL:
+                    symbol.Index = _globalIndex;
+                    _globalIndex++;
+                    break;
+            }
+
+            _st.Add(name, symbol);
+        }
+
+        public void Define(string name, string type, Kind kind, FieldBuilder fieldBuilder)
+        {
+            Symbol symbol = new Symbol(type, kind);
+
+            if (SymbolExists(name))
+            {
+                Console.WriteLine($"Error: {name} already exists in the current scope");
+                return;
+            }
+
+            switch (kind)
+            {
+                case Kind.STATIC:
+                    symbol.Index = _staticIndex;
+                    _staticIndex++;
+                    break;
+                case Kind.LOCAL:
+                    symbol.Index = _localIndex;
+                    //localBuilder.SetLocalSymInfo(name);
+                    //symbol.LocalBuilder = localBuilder;
+                    _localIndex++;
+                    break;
+                case Kind.ARG:
+                    symbol.Index = _argIndex;
+                    _argIndex++;
+                    break;
+                case Kind.GLOBAL:
+                    symbol.Index = _globalIndex;
+                    symbol.FieldBuilder = fieldBuilder;
+                    _globalIndex++;
+                    break;
+            }
+
+            _st.Add(name, symbol);
+        }
+
+        public void Define(string name, string type, Kind kind, int arrayLength, FieldBuilder fieldBuilder)
+        {
+            Symbol symbol = new Symbol(type, kind, arrayLength);
+
+            if (SymbolExists(name))
+            {
+                Console.WriteLine($"Error: {name} already exists in the current scope");
+                return;
+            }
+
+            switch (kind)
+            {
+                case Kind.STATIC:
+                    symbol.Index = _staticIndex;
+                    _staticIndex++;
+                    break;
+                case Kind.LOCAL:
+                    symbol.Index = _localIndex;
+                    //localBuilder.SetLocalSymInfo(name);
+                    //symbol.LocalBuilder = localBuilder;
+                    _localIndex++;
+                    break;
+                case Kind.ARG:
+                    symbol.Index = _argIndex;
+                    _argIndex++;
+                    break;
+                case Kind.GLOBAL:
+                    symbol.Index = _globalIndex;
+                    symbol.FieldBuilder = fieldBuilder;
+                    _globalIndex++;
                     break;
             }
 
@@ -207,8 +281,8 @@ namespace CCompilerNet.Parser
                     return _localIndex;
                 case Kind.ARG:
                     return _argIndex;
-                case Kind.THAT:
-                    return _thatIndex;
+                case Kind.GLOBAL:
+                    return _globalIndex;
             }
 
             // error
