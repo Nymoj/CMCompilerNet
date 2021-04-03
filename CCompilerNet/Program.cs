@@ -40,6 +40,11 @@ namespace CCompilerNet
 
             AST ast = parser._ast;
             parser._vm.Save(Path.GetFileName(output));
+            //File.Move(Path.GetFileName(output), output);
+            if (File.Exists(output))
+            {
+                File.Delete(output);
+            }
             File.Move(Path.GetFileName(output), output);
             outputFile.Write(ast?.ToString());
             outputFile.Close();

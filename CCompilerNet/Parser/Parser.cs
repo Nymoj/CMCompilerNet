@@ -102,6 +102,10 @@ namespace CCompilerNet.Parser
             {
                 if (CompileDeclListTag(compileDecList))
                 {
+                    if (_currentToken != null)
+                    {
+                        ErrorHandler.Error("No declarations found");
+                    }
                     parent.Add(compileDecList);
                     return true;
                 }
@@ -166,6 +170,7 @@ namespace CCompilerNet.Parser
 
             if (!IsValueEquals(";"))
             {
+                ErrorHandler.UnexpectedTokenError(";", _currentToken);
                 return false;
             }
 
@@ -201,6 +206,7 @@ namespace CCompilerNet.Parser
 
             if (!IsValueEquals(";"))
             {
+                ErrorHandler.UnexpectedTokenError(";", _currentToken);
                 return false;
             }
 
@@ -294,6 +300,7 @@ namespace CCompilerNet.Parser
 
             if (!IsTokenTypeEquals(TokenType.ID))
             {
+                ErrorHandler.UnexpectedTokenTypeError(TokenType.ID, _currentToken);
                 return false;
             }
 
@@ -314,6 +321,8 @@ namespace CCompilerNet.Parser
             // must be checked further if const is a numconst
             if (!IsTokenTypeEquals(TokenType.Const))
             {
+
+                ErrorHandler.UnexpectedTokenTypeError(TokenType.Const, _currentToken);
                 return false;
             }
 
@@ -322,6 +331,7 @@ namespace CCompilerNet.Parser
 
             if (!IsValueEquals("]"))
             {
+                ErrorHandler.UnexpectedTokenError("]", _currentToken);
                 return false;
             }
 
@@ -374,6 +384,7 @@ namespace CCompilerNet.Parser
 
             if (!IsTokenTypeEquals(TokenType.ID))
             {
+                ErrorHandler.UnexpectedTokenTypeError(TokenType.ID, _currentToken);
                 return false;
             }
 
@@ -382,6 +393,7 @@ namespace CCompilerNet.Parser
 
             if (!IsValueEquals("("))
             {
+                ErrorHandler.UnexpectedTokenError("(", _currentToken);
                 return false;
             }
 
@@ -396,6 +408,7 @@ namespace CCompilerNet.Parser
 
             if (!IsValueEquals(")"))
             {
+                ErrorHandler.UnexpectedTokenError(")", _currentToken);
                 return false;
             }
 

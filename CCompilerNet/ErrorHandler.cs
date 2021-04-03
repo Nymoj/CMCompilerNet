@@ -49,10 +49,21 @@ namespace CCompilerNet
             Environment.Exit(-1);
         }
 
-
         #endregion
 
         #region Semantic Errors
+
+        public static void VariableIsNotDeclaredError(string id)
+        {
+            Console.Error.WriteLine($"Error: {id} is not declared");
+            Environment.Exit(-1);
+        }
+
+        public static void FunctionIsNotDeclaredError(string id)
+        {
+            Console.Error.WriteLine($"Error: {id} is not declared");
+            Environment.Exit(-1);
+        }
 
         #endregion
     }

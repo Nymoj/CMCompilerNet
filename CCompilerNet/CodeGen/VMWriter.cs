@@ -422,8 +422,9 @@ namespace CCompilerNet.CodeGen
 
                     if (symbol == null)
                     {
-                        Console.Error.WriteLine($"Error: {exp.Children[0].Token.Value} is not declared.");
-                        Environment.Exit(-1);
+                        /*Console.Error.WriteLine($"Error: {exp.Children[0].Token.Value} is not declared.");
+                        Environment.Exit(-1);*/
+                        ErrorHandler.VariableIsNotDeclaredError(exp.Children[0].Token.Value);
                     }
 
 
@@ -431,8 +432,9 @@ namespace CCompilerNet.CodeGen
                     // the condition is checked in the parser
                     if (symbol == null)
                     {
-                        Console.Error.WriteLine($"Error: {exp.Children[0].Token.Value} is not declared.");
-                        Environment.Exit(-1);
+                        /*Console.Error.WriteLine($"Error: {exp.Children[0].Token.Value} is not declared.");
+                        Environment.Exit(-1);*/
+                        ErrorHandler.VariableIsNotDeclaredError(exp.Children[0].Token.Value);
                     }
 
                     if (symbol.IsArray)
@@ -443,8 +445,9 @@ namespace CCompilerNet.CodeGen
                         {
                             if (exp.Children[1].Token.Value != "=")
                             {
-                                Console.Error.WriteLine("Wrong operator, must be = when working with the array itself");
-                                Environment.Exit(-1);
+                                //Console.Error.WriteLine("Wrong operator, must be = when working with the array itself");
+                                //Environment.Exit(-1);
+                                ErrorHandler.Error("Wrong operator, must be = when working with the array itself");
                             }
                             _currILGen.Emit(OpCodes.Pop);   //get rid of earlier push, since we wont be working with index anymore
                             return CodeWriteArray(SymbolTable.GetSymbol(GetID(exp.Children[2])), symbol);
@@ -460,8 +463,9 @@ namespace CCompilerNet.CodeGen
 
                     if (type != symbol.Type)
                     {
-                        Console.Error.WriteLine($"Error: type missmatch");
-                        Environment.Exit(-1);
+                        /*Console.Error.WriteLine($"Error: type missmatch");
+                        Environment.Exit(-1);*/
+                        ErrorHandler.Error("Error: type missmatch");
                     }
 
                     //OpCode op = symbol.Kind == Kind.LOCAL ? OpCodes.Stloc : OpCodes.Starg;
@@ -593,8 +597,9 @@ namespace CCompilerNet.CodeGen
                 }
                 else
                 {
-                    Console.Error.WriteLine("Can only use 1 operator in an expression");
-                    Environment.Exit(-1);
+                    /*Console.Error.WriteLine("Can only use 1 operator in an expression");
+                    Environment.Exit(-1);*/
+                    ErrorHandler.Error("Can only use 1 operator in an expression");
                 }
 
 
@@ -611,8 +616,9 @@ namespace CCompilerNet.CodeGen
 
                     if (symbol.Type != "int")
                     {
-                        Console.Error.WriteLine($"Error: type missmatch");
-                        Environment.Exit(-1);
+                        /*Console.Error.WriteLine($"Error: type missmatch");
+                        Environment.Exit(-1);*/
+                        ErrorHandler.Error("type missmatch");
                     }
 
                     Push(GetID(exp.Children[0]), false);
@@ -717,8 +723,9 @@ namespace CCompilerNet.CodeGen
                     {
                         if (exp.Children.Count < 2)
                         {
-                            Console.Error.WriteLine($"Error: print function requires arguments.");
-                            Environment.Exit(-1);
+                            /*Console.Error.WriteLine($"Error: print function requires arguments.");
+                            Environment.Exit(-1);*/
+                            ErrorHandler.Error("print function requires arguments");
                         }
                         CodeWritePrint(exp.Children[1].Children[0]);
                         return "null";
@@ -728,16 +735,18 @@ namespace CCompilerNet.CodeGen
                     {
                         if (exp.Children.Count < 2)
                         {
-                            Console.Error.WriteLine($"Error: put function requires arguments.");
-                            Environment.Exit(-1);
+                            /*Console.Error.WriteLine($"Error: put function requires arguments.");
+                            Environment.Exit(-1);*/
+                            ErrorHandler.Error("put function requires arguments");
                         }
 
                         CodeWritePut(exp.Children[1].Children[0]);
                         return null;
                     }
 
-                    Console.Error.WriteLine($"Error: function does not exist.");
-                    Environment.Exit(-1);
+                    /*Console.Error.WriteLine($"Error: function does not exist.");
+                    Environment.Exit(-1);*/
+                    ErrorHandler.FunctionIsNotDeclaredError(exp.Children[0].Token.Value);
                 }
                 
 
@@ -766,8 +775,9 @@ namespace CCompilerNet.CodeGen
                     {
                         if (CodeWriteSimpleExp(exp.Children[1].Children[0].Children[i], isGlobal) != func.ParmTypeList[i])
                         {
-                            Console.Error.WriteLine($"Error: parameter type missmatch");
-                            Environment.Exit(-1);
+                            /*Console.Error.WriteLine($"Error: parameter type missmatch");
+                            Environment.Exit(-1);*/
+                            ErrorHandler.Error("Error: parameter type missmatch");
                         }
                     }
                 }
@@ -860,8 +870,9 @@ namespace CCompilerNet.CodeGen
                     {
                         if (type != CodeWriteSimpleExp(exp.Children[i], isGlobal))
                         {
-                            Console.Error.WriteLine($"Error: type missmatch");
-                            Environment.Exit(-1);
+                            /*Console.Error.WriteLine($"Error: type missmatch");
+                            Environment.Exit(-1);*/
+                            ErrorHandler.Error("type missmatch");
                         }
                         il.Emit(OpCodes.And);
                     }
@@ -876,8 +887,9 @@ namespace CCompilerNet.CodeGen
                     {
                         if (type != CodeWriteSimpleExp(exp.Children[i], isGlobal))
                         {
-                            Console.Error.WriteLine($"Error: type missmatch");
-                            Environment.Exit(-1);
+                            /*Console.Error.WriteLine($"Error: type missmatch");
+                            Environment.Exit(-1);*/
+                            ErrorHandler.Error("type missmatch");
                         }
                         il.Emit(OpCodes.Or);
                     }
@@ -929,8 +941,9 @@ namespace CCompilerNet.CodeGen
 
                     if (!CodeWriteTag(exp.Children[1], type, isGlobal))        //code generation of tag
                     {
-                        Console.Error.WriteLine($"Error: types mismatch");
-                        Environment.Exit(-1);
+                        /*Console.Error.WriteLine($"Error: types mismatch");
+                        Environment.Exit(-1);*/
+                        ErrorHandler.Error("type missmatch");
                     }
 
                     return type;
@@ -956,8 +969,9 @@ namespace CCompilerNet.CodeGen
 
                         if (check != "int")
                         {
-                            Console.Error.WriteLine($"Error: types mismatch");
-                            Environment.Exit(-1);
+                            /*Console.Error.WriteLine($"Error: types mismatch");
+                            Environment.Exit(-1);*/
+                            ErrorHandler.Error("type missmatch");
                         }
                     }
 
@@ -998,8 +1012,9 @@ namespace CCompilerNet.CodeGen
 
                 if (symbol == null)
                 {
-                    Console.Error.WriteLine($"Error: parameters of put must be an existing variable.");
-                    Environment.Exit(-1);
+                    /*Console.Error.WriteLine($"Error: parameters of put must be an existing variable.");
+                    Environment.Exit(-1);*/
+                    ErrorHandler.VariableIsNotDeclaredError(GetID(child));
                 }
                 _currILGen.Emit(OpCodes.Call, typeof(Console).GetMethod("ReadLine"));
 
@@ -1037,8 +1052,9 @@ namespace CCompilerNet.CodeGen
             List<Type> types = new List<Type> { ConvertToType(type, false) };
             if (type != "string" && args.Children.Count > 1)
             {
-                Console.Error.WriteLine($"Error: incorrect use of print");
-                Environment.Exit(-1);
+                /*Console.Error.WriteLine($"Error: incorrect use of print");
+                Environment.Exit(-1);*/
+                ErrorHandler.Error("incorrect use of print");
                 
             }
             else if (args.Children.Count > 1 )
@@ -1085,8 +1101,9 @@ namespace CCompilerNet.CodeGen
 
             if (symbol == null)
             {
-                Console.Error.WriteLine($"Error: {name} is not declared.");
-                Environment.Exit(-1);
+                /*Console.Error.WriteLine($"Error: {name} is not declared.");
+                Environment.Exit(-1);*/
+                ErrorHandler.VariableIsNotDeclaredError(name);
             }
 
             if (symbol.IsArray)
@@ -1098,8 +1115,9 @@ namespace CCompilerNet.CodeGen
                     string type = CodeWriteSimpleExp(exp);
                     if (symbol.Type != type)
                     {
-                        Console.Error.WriteLine($"Error: type missmatch");
-                        Environment.Exit(-1);
+                        /*Console.Error.WriteLine($"Error: type missmatch");
+                        Environment.Exit(-1);*/
+                        ErrorHandler.Error("type missmatch");
                     }
                     _currILGen.Emit(OpCodes.Stelem, ConvertToType(type, false));
                 }
@@ -1110,8 +1128,9 @@ namespace CCompilerNet.CodeGen
 
                 if (symbol.Type != type)
                 {
-                    Console.Error.WriteLine($"Error: type missmatch");
-                    Environment.Exit(-1);
+                    /*Console.Error.WriteLine($"Error: type missmatch");
+                    Environment.Exit(-1);*/
+                    ErrorHandler.Error("type missmatch");
                 }
 
                 _currILGen.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);
@@ -1124,8 +1143,9 @@ namespace CCompilerNet.CodeGen
 
             if (symbol == null)
             {
-                Console.Error.WriteLine($"Error: {name} is not declared.");
-                Environment.Exit(-1);
+                /*Console.Error.WriteLine($"Error: {name} is not declared.");
+                Environment.Exit(-1);*/
+                ErrorHandler.VariableIsNotDeclaredError(name);
             }
 
             if (symbol.IsArray)
@@ -1137,8 +1157,9 @@ namespace CCompilerNet.CodeGen
                     string type = CodeWriteSimpleExp(exp, true);
                     if (symbol.Type != type)
                     {
-                        Console.Error.WriteLine($"Error: type missmatch");
-                        Environment.Exit(-1);
+                        /*Console.Error.WriteLine($"Error: type missmatch");
+                        Environment.Exit(-1);*/
+                        ErrorHandler.Error("type missmatch");
                     }
                     _ctorIL.Emit(OpCodes.Stelem, ConvertToType(type, false));
                 }
@@ -1149,8 +1170,9 @@ namespace CCompilerNet.CodeGen
 
                 if (symbol.Type != type)
                 {
-                    Console.Error.WriteLine($"Error: type missmatch");
-                    Environment.Exit(-1);
+                    /*Console.Error.WriteLine($"Error: type missmatch");
+                    Environment.Exit(-1);*/
+                    ErrorHandler.Error("type missmatch");
                 }
 
                 _ctorIL.Emit(OpCodes.Stsfld, symbol.FieldBuilder);
