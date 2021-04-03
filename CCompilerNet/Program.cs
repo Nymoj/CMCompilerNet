@@ -49,7 +49,7 @@ namespace CCompilerNet
 
             parser.VM.Save(Path.GetFileName(output));
 
-            if (File.Exists(output))
+            if (File.Exists(output) && Path.GetFileName(output) != output)
             {
                 File.Delete(output);
             }
