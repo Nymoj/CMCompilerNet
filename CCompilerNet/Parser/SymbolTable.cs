@@ -18,8 +18,6 @@ namespace CCompilerNet.Parser
     public class SymbolTable
     {
         private Dictionary<string, Symbol> _st;
-        /*public SymbolTable Scope { get; private set; }
-        private SymbolTable _next;*/
 
         private SymbolTable _head;
         private SymbolTable _next;
@@ -100,17 +98,6 @@ namespace CCompilerNet.Parser
 
         public Symbol GetSymbol(string name)
         {
-            /*if (_next == null || !_next.SymbolExists(name))
-            {
-                return null;
-            }
-            if (!_st.ContainsKey(name))
-            {
-                return _next.GetSymbol(name);
-            }
-
-            return _next.GetSymbol(name);*/
-
             if (_next == null)
             {
                 return SymbolExists(name) ? _st[name] : null;
@@ -140,16 +127,19 @@ namespace CCompilerNet.Parser
                     symbol.Index = _staticIndex;
                     _staticIndex++;
                     break;
+
                 case Kind.LOCAL:
                     symbol.Index = _localIndex;
                     localBuilder.SetLocalSymInfo(name);
                     symbol.LocalBuilder = localBuilder;
                     _localIndex++;
                     break;
+
                 case Kind.ARG:
                     symbol.Index = _argIndex;
                     _argIndex++;
                     break;
+
                 case Kind.GLOBAL:
                     symbol.Index = _globalIndex;
                     _globalIndex++;
@@ -210,16 +200,17 @@ namespace CCompilerNet.Parser
                     symbol.Index = _staticIndex;
                     _staticIndex++;
                     break;
+
                 case Kind.LOCAL:
                     symbol.Index = _localIndex;
-                    //localBuilder.SetLocalSymInfo(name);
-                    //symbol.LocalBuilder = localBuilder;
                     _localIndex++;
                     break;
+
                 case Kind.ARG:
                     symbol.Index = _argIndex;
                     _argIndex++;
                     break;
+
                 case Kind.GLOBAL:
                     symbol.Index = _globalIndex;
                     symbol.FieldBuilder = fieldBuilder;
@@ -246,16 +237,17 @@ namespace CCompilerNet.Parser
                     symbol.Index = _staticIndex;
                     _staticIndex++;
                     break;
+
                 case Kind.LOCAL:
                     symbol.Index = _localIndex;
-                    //localBuilder.SetLocalSymInfo(name);
-                    //symbol.LocalBuilder = localBuilder;
                     _localIndex++;
                     break;
+
                 case Kind.ARG:
                     symbol.Index = _argIndex;
                     _argIndex++;
                     break;
+
                 case Kind.GLOBAL:
                     symbol.Index = _globalIndex;
                     symbol.FieldBuilder = fieldBuilder;

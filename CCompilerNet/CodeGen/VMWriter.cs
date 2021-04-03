@@ -20,7 +20,7 @@ namespace CCompilerNet.CodeGen
 
         //private ConstructorBuilder _ctorBuilder;
         private MethodBuilder _cctorBuilder;
-        private ILGenerator _ctorIL;
+        private ILGenerator _cctorIL;
 
         private MethodBuilder _methodBuilder;
         private ILGenerator _currILGen;
@@ -39,18 +39,6 @@ namespace CCompilerNet.CodeGen
                 "MyASM", output, true);
             _typeBuilder = _moduleBuilder.DefineType("Program",
                 TypeAttributes.Class | TypeAttributes.Public);
-            /*_methodBuilder = _typeBuilder.DefineMethod(
-                "Main", MethodAttributes.HideBySig | MethodAttributes.Public | MethodAttributes.Static,
-                typeof(int), new Type[] { typeof(string[]) });
-            _currILGen = _methodBuilder.GetILGenerator();*/
-
-            /*_ctorBuilder = _typeBuilder.DefineConstructor(
-                MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName,
-                CallingConventions.Standard,
-                new Type[0] { }
-                );
-
-            _ctorIL = _ctorBuilder.GetILGenerator();*/
 
             _cctorBuilder = _typeBuilder.DefineMethod(
                 ".cctor",
@@ -59,14 +47,7 @@ namespace CCompilerNet.CodeGen
                 new Type[0]
                 );
 
-            _ctorIL = _cctorBuilder.GetILGenerator();
-
-            // defining basic constructor content
-            /*_ctorIL.Emit(OpCodes.Ldarg_0);
-            ConstructorInfo superCtor = typeof(object).GetConstructor(new Type[0]);
-            // invoking the constructor of parent class (all classes must inherit from System.Object)
-            _ctorIL.Emit(OpCodes.Call, superCtor);
-            _ctorIL.Emit(OpCodes.Ret);*/
+            _cctorIL = _cctorBuilder.GetILGenerator();
 
             SymbolTable = new SymbolTable(null);
             FunctionTable = new FunctionTable(_typeBuilder);
@@ -74,23 +55,22 @@ namespace CCompilerNet.CodeGen
 
         private void Push(char value, bool isGlobal = false)
         {
-            (isGlobal ? _ctorIL : _currILGen).Emit(OpCodes.Ldc_I4, value);
+            (isGlobal ? _cctorIL : _currILGen).Emit(OpCodes.Ldc_I4, value);
         }
 
         private void Push(int value, bool isGlobal = false)
         {
-            (isGlobal ? _ctorIL : _currILGen).Emit(OpCodes.Ldc_I4, value);
+            (isGlobal ? _cctorIL : _currILGen).Emit(OpCodes.Ldc_I4, value);
         }
 
         private void Push(bool value, bool isGlobal = false)
         {
-            (isGlobal ? _ctorIL : _currILGen).Emit(OpCodes.Ldc_I4, value ? 1 : 0);
+            (isGlobal ? _cctorIL : _currILGen).Emit(OpCodes.Ldc_I4, value ? 1 : 0);
         }
 
         private void Push(string id, bool isGlobal)
         {
             Symbol symbol = SymbolTable.GetSymbol(id);
-            //OpCode opCode = symbol.Kind == Kind.LOCAL ? OpCodes.Ldloc : OpCodes.Ldarg;
             OpCode opCode = GetLdCode(symbol.Kind);
 
             if (symbol == null)
@@ -101,14 +81,9 @@ namespace CCompilerNet.CodeGen
 
             if (isGlobal)
             {
-                _ctorIL.Emit(OpCodes.Ldsfld, symbol.FieldBuilder);
+                _cctorIL.Emit(OpCodes.Ldsfld, symbol.FieldBuilder);
                 return;
             }
-            /*else
-            {
-                //_currILGen.Emit(opCode, symbol.Kind == Kind.LOCAL ? symbol.LocalBuilder.LocalIndex : symbol.Index);
-                
-            }*/
 
             switch(symbol.Kind)
             {
@@ -126,7 +101,7 @@ namespace CCompilerNet.CodeGen
 
         private void PushString(string str, bool isGlobal = false)
         {
-            (isGlobal ? _ctorIL : _currILGen).Emit(OpCodes.Ldstr, str);
+            (isGlobal ? _cctorIL : _currILGen).Emit(OpCodes.Ldstr, str);
         }
 
         private OpCode GetLdCode(Kind kind)
@@ -189,11 +164,9 @@ namespace CCompilerNet.CodeGen
                 _asmBuilder.SetEntryPoint(_methodBuilder, PEFileKinds.ConsoleApplication);
             }
 
-            _ctorIL.Emit(OpCodes.Ret);
+            _cctorIL.Emit(OpCodes.Ret);
 
             _typeBuilder.CreateType();
-
-            //_asmBuilder.SetEntryPoint(_methodBuilder, PEFileKinds.ConsoleApplication);
 
             File.Delete(path);
             _asmBuilder.Save(path);
@@ -298,15 +271,9 @@ namespace CCompilerNet.CodeGen
                 _currILGen.Emit(OpCodes.Brfalse, toEnd);
                 CodeWriteStmt(root.Children[1]);
                 _currILGen.MarkLabel(toEnd);
-                //CodeWriteSimpleExp(root.Children[0]);
-
-                /*var toEnd = _currILGen.DefineLabel();
-                _currILGen.Emit(OpCodes.Brfalse, toEnd);
-                _currILGen.Emit(OpCodes.Ldstr, "Hello");
-                _currILGen.Emit(OpCodes.Call, typeof(Console).GetMethod("WriteLine", new Type[] { typeof(string) }));
-                _currILGen.MarkLabel(toEnd);*/
             }
         }
+
         public void CodeWriteForLoop(ASTNode root)
         {
             Label toLoopTop = _currILGen.DefineLabel();
@@ -331,13 +298,11 @@ namespace CCompilerNet.CodeGen
             }
             else
             {
-                Push(1);     //push the size of each jump
+                Push(1); //push the size of each jump
             }
 
             _currILGen.Emit(OpCodes.Add);
             _currILGen.Emit(OpCodes.Stloc, symbol.LocalBuilder.LocalIndex);  //pop value into "i"
-
-
 
             //translate condition
             _currILGen.MarkLabel(toCondition);
@@ -381,10 +346,6 @@ namespace CCompilerNet.CodeGen
 
             for (int i = 0; i < arr1.ArrayLength && i < arr2.ArrayLength; i++)
             {
-                /*_currILGen.Emit(op1, arr1.Index);
-                Push(i);
-                _currILGen.Emit(op2, arr2.Index);
-                Push(i);*/
                 if (arr1.Kind == Kind.GLOBAL)
                 {
                     _currILGen.Emit(op1, arr1.FieldBuilder);
@@ -422,18 +383,13 @@ namespace CCompilerNet.CodeGen
 
                     if (symbol == null)
                     {
-                        /*Console.Error.WriteLine($"Error: {exp.Children[0].Token.Value} is not declared.");
-                        Environment.Exit(-1);*/
                         ErrorHandler.VariableIsNotDeclaredError(exp.Children[0].Token.Value);
                     }
-
 
                     // possibly will be removed
                     // the condition is checked in the parser
                     if (symbol == null)
                     {
-                        /*Console.Error.WriteLine($"Error: {exp.Children[0].Token.Value} is not declared.");
-                        Environment.Exit(-1);*/
                         ErrorHandler.VariableIsNotDeclaredError(exp.Children[0].Token.Value);
                     }
 
@@ -445,8 +401,6 @@ namespace CCompilerNet.CodeGen
                         {
                             if (exp.Children[1].Token.Value != "=")
                             {
-                                //Console.Error.WriteLine("Wrong operator, must be = when working with the array itself");
-                                //Environment.Exit(-1);
                                 ErrorHandler.Error("Wrong operator, must be = when working with the array itself");
                             }
                             _currILGen.Emit(OpCodes.Pop);   //get rid of earlier push, since we wont be working with index anymore
@@ -463,27 +417,13 @@ namespace CCompilerNet.CodeGen
 
                     if (type != symbol.Type)
                     {
-                        /*Console.Error.WriteLine($"Error: type missmatch");
-                        Environment.Exit(-1);*/
                         ErrorHandler.Error("Error: type missmatch");
                     }
 
-                    //OpCode op = symbol.Kind == Kind.LOCAL ? OpCodes.Stloc : OpCodes.Starg;
                     OpCode op = GetStCode(symbol.Kind);
                     
-
                     switch (exp.Children[1].Token.Value)
                     {
-                        /*case "=":
-                            if (symbol.IsArray)
-                            {
-                                _currILGen.Emit(OpCodes.Stelem, ConvertToType(symbol.Type, false));
-                            }
-                            else
-                            {
-                                _currILGen.Emit(op, symbol.Index);
-                            }
-                            break;*/
                         case "+=":
 
                             Push(GetID(exp.Children[0]), false);
@@ -494,17 +434,8 @@ namespace CCompilerNet.CodeGen
                             }
 
                             _currILGen.Emit(OpCodes.Add);
-
-                            /*if (symbol.IsArray)
-                            {
-                                _currILGen.Emit(OpCodes.Stelem, ConvertToType(symbol.Type, false));
-                            }
-                            else
-                            {
-                                _currILGen.Emit(op, symbol.Index);
-                            }*/
-
                             break;
+
                         case "-=":
                             //order of push is important so pushes the 2nd part again and pops the remaining one 
                             Push(GetID(exp.Children[0]), false);
@@ -517,17 +448,8 @@ namespace CCompilerNet.CodeGen
 
                             CodeWriteExp(exp.Children[2]);
                             _currILGen.Emit(OpCodes.Sub);
-
-                            /*if (symbol.IsArray)
-                            {
-                                _currILGen.Emit(OpCodes.Stelem, ConvertToType(symbol.Type, false));
-                            }
-                            else
-                            {
-                                _currILGen.Emit(op, symbol.Index);
-                            }*/
-
                             break;
+
                         case "*=":
                             Push(GetID(exp.Children[0]), false);
 
@@ -538,17 +460,8 @@ namespace CCompilerNet.CodeGen
                             }
 
                             _currILGen.Emit(OpCodes.Mul);
-
-                            /*if (symbol.IsArray)
-                            {
-                                _currILGen.Emit(OpCodes.Stelem, ConvertToType(symbol.Type, false));
-                            }
-                            else
-                            {
-                                _currILGen.Emit(op, symbol.Index);
-                            }*/
-
                             break;
+
                         case "/=":
                             //order of push is important so pushes the 2nd part again and pops the remaining one 
 
@@ -562,18 +475,7 @@ namespace CCompilerNet.CodeGen
 
                             CodeWriteExp(exp.Children[2]);
                             _currILGen.Emit(OpCodes.Div);
-
-                            /*if (symbol.IsArray)
-                            {
-                                _currILGen.Emit(OpCodes.Stelem, ConvertToType(symbol.Type, false));
-                            }
-                            else
-                            {
-                                _currILGen.Emit(op, symbol.Index);
-                            }*/
-
                             break;
-
                     }
 
                     if (symbol.IsArray)
@@ -582,7 +484,6 @@ namespace CCompilerNet.CodeGen
                     }
                     else
                     {
-                        //_currILGen.Emit(op, symbol.Index));
                         if (symbol.Kind == Kind.GLOBAL)
                         {
                             _currILGen.Emit(op, symbol.FieldBuilder);
@@ -597,13 +498,8 @@ namespace CCompilerNet.CodeGen
                 }
                 else
                 {
-                    /*Console.Error.WriteLine("Can only use 1 operator in an expression");
-                    Environment.Exit(-1);*/
                     ErrorHandler.Error("Can only use 1 operator in an expression");
                 }
-
-
-
             }
 
             if (exp.Children.Count == 2 && exp.Children[1].Token != null)
@@ -616,8 +512,6 @@ namespace CCompilerNet.CodeGen
 
                     if (symbol.Type != "int")
                     {
-                        /*Console.Error.WriteLine($"Error: type missmatch");
-                        Environment.Exit(-1);*/
                         ErrorHandler.Error("type missmatch");
                     }
 
@@ -636,13 +530,11 @@ namespace CCompilerNet.CodeGen
                     if (op == "++")
                     {
                         _currILGen.Emit(OpCodes.Add);
-
                     }
                     else
                     {
                         _currILGen.Emit(OpCodes.Sub);
                     }
-
 
                     if (symbol.IsArray)
                     {
@@ -653,9 +545,7 @@ namespace CCompilerNet.CodeGen
                         _currILGen.Emit(opCode, symbol.Index);
                     }
 
-
                     return "int";
-
                 }
             }
 
@@ -664,7 +554,7 @@ namespace CCompilerNet.CodeGen
 
         public string CodeWriteSimpleExp(ASTNode exp, bool isGlobal = false)
         {
-            ILGenerator il = isGlobal ? _ctorIL : _currILGen;
+            ILGenerator il = isGlobal ? _cctorIL : _currILGen;
 
             if (exp.Tag == "constant" || exp.Tag == "mutable")
             {
@@ -705,7 +595,6 @@ namespace CCompilerNet.CodeGen
                         il.Emit(OpCodes.Ldelem, ConvertToType(SymbolTable.GetSymbol(value).Type, false));
 
                         return SymbolTable.GetSymbol(value).Type;
-                        //il.Emit(OpCodes.Ldelem, ConvertToType(SymbolTable.GetSymbol(value).Type, false));
                     }
 
                     return SymbolTable.GetSymbol(value).Type;
@@ -723,8 +612,6 @@ namespace CCompilerNet.CodeGen
                     {
                         if (exp.Children.Count < 2)
                         {
-                            /*Console.Error.WriteLine($"Error: print function requires arguments.");
-                            Environment.Exit(-1);*/
                             ErrorHandler.Error("print function requires arguments");
                         }
                         CodeWritePrint(exp.Children[1].Children[0]);
@@ -735,8 +622,6 @@ namespace CCompilerNet.CodeGen
                     {
                         if (exp.Children.Count < 2)
                         {
-                            /*Console.Error.WriteLine($"Error: put function requires arguments.");
-                            Environment.Exit(-1);*/
                             ErrorHandler.Error("put function requires arguments");
                         }
 
@@ -744,11 +629,8 @@ namespace CCompilerNet.CodeGen
                         return null;
                     }
 
-                    /*Console.Error.WriteLine($"Error: function does not exist.");
-                    Environment.Exit(-1);*/
                     ErrorHandler.FunctionIsNotDeclaredError(exp.Children[0].Token.Value);
                 }
-                
 
                 if (func.ParmTypeList != null) //checks if argument list is empty
                 {
@@ -760,27 +642,15 @@ namespace CCompilerNet.CodeGen
                         Environment.Exit(-1);
                     }
 
-                    /*CodeWriteExp(exp.Children[1].Children[0].Children[0]); //first argument of function
-
-                    if (exp.Children[1].Children[0].Children.Count > 1)     //checks if theres more than 1 arguments resulting in arg tag
-                    {
-                        foreach (ASTNode child in exp.Children[1].Children[0].Children[1].Children) //goes over all arg list tag members
-                        {
-                            CodeWriteExp(child);
-                        }
-                    }
-                    */
-
                     for (int i = 0; i < num; i++)
                     {
                         if (CodeWriteSimpleExp(exp.Children[1].Children[0].Children[i], isGlobal) != func.ParmTypeList[i])
                         {
-                            /*Console.Error.WriteLine($"Error: parameter type missmatch");
-                            Environment.Exit(-1);*/
                             ErrorHandler.Error("Error: parameter type missmatch");
                         }
                     }
                 }
+
                 il.Emit(OpCodes.Call, func.MethodBuilder);  //call func
 
                 return func.Type;
@@ -788,7 +658,6 @@ namespace CCompilerNet.CodeGen
 
             if (exp.Tag == "operator")
             {
-                // Console.WriteLine(exp.Children[0].Token.Value);
                 switch (exp.Children[0].Token.Value)
                 {
                     case "+":
@@ -823,29 +692,12 @@ namespace CCompilerNet.CodeGen
                         il.Emit(OpCodes.Ldlen);
                         break;
                     case "?":
-                        // considering an adress to a Random type object is already on the stack
-                        // with the argument
-
-                        //_currILGen.Emit(OpCodes.Callvirt, typeof(Random).GetMethod("Next", new Type[] { typeof(Int32) }));
                         Label toPositiveCase = il.DefineLabel();
                         Label toEnd = il.DefineLabel();
-                        //Label toNegativeCase = _currILGen.DefineLabel();
-                        //Label toEnd = _currILGen.DefineLabel();
 
                         il.Emit(OpCodes.Ldc_I4, 0);
                         il.Emit(OpCodes.Clt);
                         // if value is greater than zero, branch to the end
-                        /*_currILGen.Emit(OpCodes.Brfalse, toPositiveCase);
-
-                        _currILGen.Emit(OpCodes.Neg);
-                        _currILGen.Emit(OpCodes.Br, toNegativeCase);
-
-                        _currILGen.Emit(OpCodes.Callvirt, typeof(Random).GetMethod("Next", new Type[] { typeof(Int32) }));
-                        _currILGen.MarkLabel(toPositiveCase);
-
-                        _currILGen.Emit(OpCodes.Callvirt, typeof(Random).GetMethod("Next", new Type[] { typeof(Int32) }));
-                        _currILGen.MarkLabel(toNegativeCase);
-                        _currILGen.Emit(OpCodes.Neg);*/
                         il.Emit(OpCodes.Brfalse, toPositiveCase);
                         il.Emit(OpCodes.Neg);
                         il.Emit(OpCodes.Callvirt, typeof(Random).GetMethod("Next", new Type[] { typeof(Int32) }));
@@ -853,7 +705,6 @@ namespace CCompilerNet.CodeGen
                         il.Emit(OpCodes.Br, toEnd);
 
                         il.MarkLabel(toPositiveCase);
-                        //_currILGen.Emit(OpCodes.Pop);
                         il.Emit(OpCodes.Callvirt, typeof(Random).GetMethod("Next", new Type[] { typeof(Int32) }));
                         il.MarkLabel(toEnd);
                         break;
@@ -870,12 +721,11 @@ namespace CCompilerNet.CodeGen
                     {
                         if (type != CodeWriteSimpleExp(exp.Children[i], isGlobal))
                         {
-                            /*Console.Error.WriteLine($"Error: type missmatch");
-                            Environment.Exit(-1);*/
                             ErrorHandler.Error("type missmatch");
                         }
                         il.Emit(OpCodes.And);
                     }
+
                     return type;
                 }
 
@@ -887,15 +737,13 @@ namespace CCompilerNet.CodeGen
                     {
                         if (type != CodeWriteSimpleExp(exp.Children[i], isGlobal))
                         {
-                            /*Console.Error.WriteLine($"Error: type missmatch");
-                            Environment.Exit(-1);*/
                             ErrorHandler.Error("type missmatch");
                         }
                         il.Emit(OpCodes.Or);
                     }
+
                     return type;
                 }
-
 
                 if (exp.Tag == "relExpression")
                 {
@@ -908,28 +756,32 @@ namespace CCompilerNet.CodeGen
                         case "==":
                             il.Emit(OpCodes.Ceq);
                             break;
+
                         case "!=":
                             il.Emit(OpCodes.Ceq);
                             il.Emit(OpCodes.Ldc_I4_0);
                             il.Emit(OpCodes.Ceq);
                             break;
+
                         case ">":
                             il.Emit(OpCodes.Cgt);
                             break;
+
                         case "<":
                             il.Emit(OpCodes.Clt);
                             break;
+
                         case ">=":
                             il.Emit(OpCodes.Clt);
                             il.Emit(OpCodes.Ldc_I4_0);
                             il.Emit(OpCodes.Ceq);
                             break;
+
                         case "<=":
                             il.Emit(OpCodes.Cgt);
                             il.Emit(OpCodes.Ldc_I4_0);
                             il.Emit(OpCodes.Ceq);
                             break;
-
                     }
 
                     return "bool";
@@ -939,25 +791,13 @@ namespace CCompilerNet.CodeGen
                 {
                     string type = CodeWriteSimpleExp(exp.Children[0], isGlobal);    //push 1st exp
 
-                    if (!CodeWriteTag(exp.Children[1], type, isGlobal))        //code generation of tag
+                    if (!CodeWriteTag(exp.Children[1], type, isGlobal))  //code generation of tag
                     {
-                        /*Console.Error.WriteLine($"Error: types mismatch");
-                        Environment.Exit(-1);*/
                         ErrorHandler.Error("type missmatch");
                     }
 
                     return type;
                 }
-
-
-
-                /*if (exp.Tag == "mulExpressionTag" || exp.Tag == "sumExpressionTag")
-                {
-                    foreach (ASTNode child in exp.Children)
-                    {
-                        CodeWriteExp(child);
-                    }
-                }*/
 
                 if (exp.Tag == "unaryExp")
                 {
@@ -969,15 +809,11 @@ namespace CCompilerNet.CodeGen
 
                         if (check != "int")
                         {
-                            /*Console.Error.WriteLine($"Error: types mismatch");
-                            Environment.Exit(-1);*/
                             ErrorHandler.Error("type missmatch");
                         }
                     }
 
                     string type = CodeWriteSimpleExp(exp.Children[0], isGlobal); //push exp
-
-                    //CodeWriteExp(exp.Children[1]); // pushes operator
 
                     CodeWriteSimpleExp(exp.Children[1], isGlobal); // pushing the operator
 
@@ -1012,10 +848,9 @@ namespace CCompilerNet.CodeGen
 
                 if (symbol == null)
                 {
-                    /*Console.Error.WriteLine($"Error: parameters of put must be an existing variable.");
-                    Environment.Exit(-1);*/
                     ErrorHandler.VariableIsNotDeclaredError(GetID(child));
                 }
+
                 _currILGen.Emit(OpCodes.Call, typeof(Console).GetMethod("ReadLine"));
 
                 switch (symbol.Type)
@@ -1023,13 +858,14 @@ namespace CCompilerNet.CodeGen
                     case "int":
                         _currILGen.Emit(OpCodes.Call, typeof(Int32).GetMethod("Parse", new Type[] { typeof(string) }) );
                         break;
+
                     case "char":
                         _currILGen.Emit(OpCodes.Call, typeof(Char).GetMethod("Parse", new Type[] { typeof(string) }));
                         break;
+
                     case "bool":
                         _currILGen.Emit(OpCodes.Call, typeof(Boolean).GetMethod("Parse", new Type[] { typeof(string) }));
                         break;
-
                 }
 
                 switch (symbol.Kind)
@@ -1037,12 +873,11 @@ namespace CCompilerNet.CodeGen
                     case Kind.LOCAL:
                        _currILGen.Emit(OpCodes.Stloc, symbol.Index);
                         break;   
+
                     case Kind.ARG:
                        _currILGen.Emit(OpCodes.Starg, symbol.Index);
                         break;
-
                 }
-
             }
         }
 
@@ -1052,10 +887,7 @@ namespace CCompilerNet.CodeGen
             List<Type> types = new List<Type> { ConvertToType(type, false) };
             if (type != "string" && args.Children.Count > 1)
             {
-                /*Console.Error.WriteLine($"Error: incorrect use of print");
-                Environment.Exit(-1);*/
                 ErrorHandler.Error("incorrect use of print");
-                
             }
             else if (args.Children.Count > 1 )
             {
@@ -1070,8 +902,8 @@ namespace CCompilerNet.CodeGen
             }
 
             _currILGen.Emit(OpCodes.Call, typeof(Console).GetMethod("WriteLine", types.ToArray()));
-
         }
+
         public bool CodeWriteTag(ASTNode exp, string type, bool isGlobal)
         {
             string currType;
@@ -1101,8 +933,6 @@ namespace CCompilerNet.CodeGen
 
             if (symbol == null)
             {
-                /*Console.Error.WriteLine($"Error: {name} is not declared.");
-                Environment.Exit(-1);*/
                 ErrorHandler.VariableIsNotDeclaredError(name);
             }
 
@@ -1115,8 +945,6 @@ namespace CCompilerNet.CodeGen
                     string type = CodeWriteSimpleExp(exp);
                     if (symbol.Type != type)
                     {
-                        /*Console.Error.WriteLine($"Error: type missmatch");
-                        Environment.Exit(-1);*/
                         ErrorHandler.Error("type missmatch");
                     }
                     _currILGen.Emit(OpCodes.Stelem, ConvertToType(type, false));
@@ -1128,8 +956,6 @@ namespace CCompilerNet.CodeGen
 
                 if (symbol.Type != type)
                 {
-                    /*Console.Error.WriteLine($"Error: type missmatch");
-                    Environment.Exit(-1);*/
                     ErrorHandler.Error("type missmatch");
                 }
 
@@ -1143,8 +969,6 @@ namespace CCompilerNet.CodeGen
 
             if (symbol == null)
             {
-                /*Console.Error.WriteLine($"Error: {name} is not declared.");
-                Environment.Exit(-1);*/
                 ErrorHandler.VariableIsNotDeclaredError(name);
             }
 
@@ -1152,16 +976,14 @@ namespace CCompilerNet.CodeGen
             {
                 for (int i = 0; i < symbol.ArrayLength; i++)
                 {
-                    _ctorIL.Emit(OpCodes.Ldsfld, symbol.FieldBuilder);
-                    _ctorIL.Emit(OpCodes.Ldc_I4, i);
+                    _cctorIL.Emit(OpCodes.Ldsfld, symbol.FieldBuilder);
+                    _cctorIL.Emit(OpCodes.Ldc_I4, i);
                     string type = CodeWriteSimpleExp(exp, true);
                     if (symbol.Type != type)
                     {
-                        /*Console.Error.WriteLine($"Error: type missmatch");
-                        Environment.Exit(-1);*/
                         ErrorHandler.Error("type missmatch");
                     }
-                    _ctorIL.Emit(OpCodes.Stelem, ConvertToType(type, false));
+                    _cctorIL.Emit(OpCodes.Stelem, ConvertToType(type, false));
                 }
             }
             else
@@ -1170,12 +992,10 @@ namespace CCompilerNet.CodeGen
 
                 if (symbol.Type != type)
                 {
-                    /*Console.Error.WriteLine($"Error: type missmatch");
-                    Environment.Exit(-1);*/
                     ErrorHandler.Error("type missmatch");
                 }
 
-                _ctorIL.Emit(OpCodes.Stsfld, symbol.FieldBuilder);
+                _cctorIL.Emit(OpCodes.Stsfld, symbol.FieldBuilder);
             }
         }
 
@@ -1191,7 +1011,6 @@ namespace CCompilerNet.CodeGen
                     int arrayLength = int.Parse(child.Children[0].Children[1].Token.Value);
                     string name = child.Children[0].Children[0].Token.Value;
 
-                    //SymbolTable.Define(name, type, Kind.GLOBAL, arrayLength, _currILGen.DeclareLocal(ConvertToType(type, true)));
                     SymbolTable.Define(name, type, Kind.GLOBAL, arrayLength, _typeBuilder.DefineField(
                         name, 
                         ConvertToType(type, true),
@@ -1199,9 +1018,9 @@ namespace CCompilerNet.CodeGen
                         ));
 
                     // init the array
-                    _ctorIL.Emit(OpCodes.Ldc_I4, arrayLength);
-                    _ctorIL.Emit(OpCodes.Newarr, ConvertToType(type, false));
-                    _ctorIL.Emit(OpCodes.Stsfld, SymbolTable.GetSymbol(name).FieldBuilder);
+                    _cctorIL.Emit(OpCodes.Ldc_I4, arrayLength);
+                    _cctorIL.Emit(OpCodes.Newarr, ConvertToType(type, false));
+                    _cctorIL.Emit(OpCodes.Stsfld, SymbolTable.GetSymbol(name).FieldBuilder);
                 }
                 else
                 {
@@ -1220,7 +1039,6 @@ namespace CCompilerNet.CodeGen
                 if (child.Children.Count > 1)
                 {
                     string name = child.Children[0].Children[0].Token.Value;
-                    //Symbol symbol = SymbolTable.GetSymbol(name);
 
                     CodeWriteVarDecl(child.Children[0], child.Children[1], name);
                 }
@@ -1272,7 +1090,6 @@ namespace CCompilerNet.CodeGen
                 if (child.Children.Count > 1)
                 {
                     string name = child.Children[0].Children[0].Token.Value;
-                    //Symbol symbol = SymbolTable.GetSymbol(name);
 
                     CodeWriteScopedVarDecl(child.Children[0], child.Children[1], name);
                 }

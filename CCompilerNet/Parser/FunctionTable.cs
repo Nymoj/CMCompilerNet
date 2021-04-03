@@ -20,18 +20,6 @@ namespace CCompilerNet.Parser
             _typeBuilder = typeBuilder;
         }
 
-        /*public void Define(string name, List<string> parmTypeList, string type)
-        {
-            _fs.Add(name, new FunctionSymbol(parmTypeList,
-                type,
-                _typeBuilder.DefineMethod(name,
-                System.Reflection.MethodAttributes.Public | System.Reflection.MethodAttributes.Static,
-                VMWriter.ConvertToType(type, false),
-                VMWriter.ConvertToType(parmTypeList.ToArray())
-                )
-            ));
-        }*/
-
         public void Define(ASTNode root)
         {
             string type = SemanticHelper.GetFunctionType(root);

@@ -17,9 +17,14 @@ namespace CCompilerNet
             string output = "";
             string path = "";
 
+            if (args.Length == 0)
+            {
+                Console.Error.WriteLine("Error: No arguments were passed.");
+                Environment.Exit(-1);
+            }
+
             for (int i = 0; i < args.Length; i++)
             {
-
                 if (args[i].Contains("-output="))
                 {
                     output = args[i].Replace("-output=", "");
@@ -29,25 +34,27 @@ namespace CCompilerNet
                 {
                     path = args[i];
                 }
-
             }
 
-            output = output == "" ? path.Replace(".cm", ".exe") : output;   //if output is empty save the .exe file at the same path as the .c file
+            if (string.IsNullOrEmpty(path))
+            {
+                Console.Error.WriteLine("Error: No input files provided (input files must have .cm extension).");
+                Environment.Exit(-1);
+            }
 
-            StreamWriter outputFile = new StreamWriter("output.xml");
+            output = string.IsNullOrEmpty(output) ? path.Replace(".cm", ".exe") : output;   //if output is empty save the .exe file at the same path as the .c file
+
             Parser.Parser parser = new Parser.Parser(args[0], Path.GetFileName(output));
             parser.CompileProgram();
 
-            AST ast = parser._ast;
-            parser._vm.Save(Path.GetFileName(output));
-            //File.Move(Path.GetFileName(output), output);
+            parser.VM.Save(Path.GetFileName(output));
+
             if (File.Exists(output))
             {
                 File.Delete(output);
             }
+
             File.Move(Path.GetFileName(output), output);
-            outputFile.Write(ast?.ToString());
-            outputFile.Close();
             Console.WriteLine("File Compiled Succesfuly and saved at {0}", Path.GetFullPath(output));
         }
     }

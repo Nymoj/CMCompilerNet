@@ -14,7 +14,7 @@ namespace CCompilerNet.Parser
         private Lexer _lexer;
         private Token _currentToken;
         public AST _ast { get; private set; }
-        public VMWriter _vm { get; }
+        public VMWriter VM { get; }
 
         public Parser(Parser other)
         {
@@ -27,7 +27,7 @@ namespace CCompilerNet.Parser
             _ast = null;
             _lexer = new Lexer(filePath);
             _currentToken = _lexer.GetNextToken();
-            _vm = new VMWriter(fileName);
+            VM = new VMWriter(fileName);
         }
 
         private void EatToken()
@@ -43,38 +43,6 @@ namespace CCompilerNet.Parser
         private bool IsValueEquals(string value)
         {
             return _currentToken != null && _currentToken.Value == value;
-        }
-
-        private void ExpectedToken(TokenType tokenType, string tokenValue)
-        {
-            if (!IsTokenTypeEquals(tokenType) || !IsValueEquals(tokenValue))
-            {
-                if (_currentToken == null)
-                {
-                    Error(tokenValue + " expected");
-                }
-
-                Error(string.Format("{0} expected, but {1} was passed", tokenValue, _currentToken.Value));
-            }
-        }
-
-        public void ExpectedToken(TokenType tokenType)
-        {
-            if (!IsTokenTypeEquals(tokenType))
-            {
-                if (_currentToken == null)
-                {
-                    Error("const expected");
-                }
-
-                Error(string.Format("{0} expected, but {1} was passed", tokenType, _currentToken.Type));
-            }
-        }
-
-        public void Error(string errorMessage)
-        {
-            Console.WriteLine("Error: " + errorMessage);
-            System.Environment.Exit(1);
         }
 
         #region Declarations
@@ -174,7 +142,7 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
-            _vm.AddSymbolsFromVarDecl(varDecl);
+            VM.AddSymbolsFromVarDecl(varDecl);
 
             EatToken();
             parent.Add(varDecl);
@@ -210,7 +178,7 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
-            _vm.AddSymbolsFromScopedVarDecl(scopedVarDecl);
+            VM.AddSymbolsFromScopedVarDecl(scopedVarDecl);
 
             EatToken();
             parent.Add(scopedVarDecl);
@@ -305,7 +273,6 @@ namespace CCompilerNet.Parser
             }
 
             // saving the ID
-            //varDeclId = new ASTNode("varDeclId", _currentToken);
             varDeclId.Add(new ASTNode(_currentToken));
             EatToken();
 
@@ -321,7 +288,6 @@ namespace CCompilerNet.Parser
             // must be checked further if const is a numconst
             if (!IsTokenTypeEquals(TokenType.Const))
             {
-
                 ErrorHandler.UnexpectedTokenTypeError(TokenType.Const, _currentToken);
                 return false;
             }
@@ -350,7 +316,6 @@ namespace CCompilerNet.Parser
                 typeSpec = new ASTNode("typeSpec", _currentToken);
                 parent.Add(typeSpec);
 
-                //EatToken();
                 return true;
             }
             return false;
@@ -399,7 +364,7 @@ namespace CCompilerNet.Parser
 
             EatToken();
 
-            _vm.SymbolTable = _vm.SymbolTable.StartSubRoutine();
+            VM.SymbolTable = VM.SymbolTable.StartSubRoutine();
 
             if (!CompileParms(funDecl))
             {
@@ -415,16 +380,15 @@ namespace CCompilerNet.Parser
             EatToken();
 
             // vm translation
-            _vm.FunctionTable.Define(funDecl);
-            _vm.CodeWriteFunction(funDecl);
+            VM.FunctionTable.Define(funDecl);
+            VM.CodeWriteFunction(funDecl);
 
             if (!CompileStmt(funDecl, true))
             {
                 return false;
             }
 
-            _vm.SymbolTable = _vm.SymbolTable.GetNext();
-            //_vm.CodeWriteFunction(funDecl);
+            VM.SymbolTable = VM.SymbolTable.GetNext();
 
             parent.Add(funDecl);
             return true;
@@ -488,7 +452,6 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
-            //parent.Add(parmListTag);
             parent += parmListTag;
             return true;
         }
@@ -517,7 +480,7 @@ namespace CCompilerNet.Parser
 
             foreach (string id in ids.Keys)
             {
-                _vm.SymbolTable.Define(id, type, Kind.ARG, ids[id]);
+                VM.SymbolTable.Define(id, type, Kind.ARG, ids[id]);
             }
 
             parent.Add(parmTypeList);
@@ -568,7 +531,6 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
-            //parent.Add(parmIdListTag);
             parent += parmIdListTag;
             return true;
         }
@@ -611,7 +573,6 @@ namespace CCompilerNet.Parser
 
         #region Expression
 
-
         // exp -> mutable = exp | mutable += exp | mutable -= exp | mutable *= exp | mutable /= exp | mutable++ | mutable-- | simpleExp
         private bool CompileExp(ASTNode parent)
         {
@@ -628,12 +589,11 @@ namespace CCompilerNet.Parser
                         ErrorHandler.UnexpectedTokenError("=", _currentToken);                 
                     }
 
-                    string id = _vm.GetID(expression);
+                    string id = VM.GetID(expression);
                     // check if the id is declared
-                    if (_vm.SymbolTable.GetSymbol(id) == null)
+                    if (VM.SymbolTable.GetSymbol(id) == null)
                     {
-                        Console.Error.WriteLine($"Error: {id} is not declared.");
-                        Environment.Exit(-1);
+                        ErrorHandler.VariableIsNotDeclaredError(id);
                     }
 
                     if (mutables.Contains(_currentToken.Value)) // checks if mutable -> exp
@@ -647,8 +607,7 @@ namespace CCompilerNet.Parser
                             return true;
                         }
 
-                        ErrorHandler.UnexpectedTokenError("expression", _currentToken);;
-
+                        ErrorHandler.UnexpectedTokenError("expression", _currentToken);
                     }
 
                     if (ops.Contains(_currentToken.Value))
@@ -659,59 +618,13 @@ namespace CCompilerNet.Parser
                         EatToken();
                         return true;
                     }
-
-                   // ErrorHandler.UnexpectedTokenError("operator", _currentToken); 
                 }
 
                 parent.Add(expression);
                 return true;
             }
+
             return false;
-
-            /*if (CompileMutable(expression))
-            {
-                if (_lexer.Peek(1) == null)
-                {
-                    return false;
-                }
-
-                if (mutables.Contains(_lexer.Peek(1).Value)) // checks if mutable -> exp
-                {
-                    EatToken();
-                    expression.Add(new ASTNode(_currentToken)); //add operator to node of the expression
-                    EatToken();
-
-                    if (CompileExp(expression))
-                    {
-                        parent.Add(expression);
-                        return true;
-                    }
-
-                    return false;
-
-                }
-
-                if (ops.Contains(_currentToken.Value))
-                {
-                    expression.Add(new ASTNode(_currentToken));   //add operator to node of the expression
-
-                    parent.Add(expression);
-                    EatToken();
-                    return true;
-                }
-
-                
-            }
-            expression.Children.Clear();
-            if (CompileSimpleExp(expression)) //checks if its a simple expression
-            {
-                parent.Add(expression);
-                return true;
-            }
-
-            return false; */
-
-
         }
 
         static private string GetTag(ASTNode exp)
@@ -741,10 +654,10 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
-
             parent.Add(simpleExp);
             return true;
         }
+
         private bool CompileSimpleExpTag(ASTNode parent)
         {
             ASTNode simpleExpTag = new ASTNode("simpleExpressionTag");
@@ -766,7 +679,6 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
-            //parent.Add(simpleExpTag);
             parent += simpleExpTag;
             return true;
         }
@@ -813,7 +725,6 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
-            //parent.Add(andExpTag);
             parent += andExpTag;
             return true;
         }
@@ -843,6 +754,7 @@ namespace CCompilerNet.Parser
                 parent.Add(unaryRelExp);
                 return true;
             }
+
             return false;
         }
 
@@ -889,9 +801,10 @@ namespace CCompilerNet.Parser
             return true;
 
         }
+
         // minmaxExp -> minmaxExp minmaxOp sumExp | sumExp
         // minmaxExp -> sumExp minmaxExp'
-        //minmaxExp' -> minmaxOp sumExp minmaxExp'  | epsilon
+        // minmaxExp' -> minmaxOp sumExp minmaxExp'  | epsilon
         private bool CompileMinMaxExp(ASTNode parent)
         {
             ASTNode minMaxExp = new ASTNode("minMaxExpression");
@@ -930,7 +843,6 @@ namespace CCompilerNet.Parser
             }
 
             parent.Add(minMaxExpTag);
-
             return true;
         }
 
@@ -938,11 +850,6 @@ namespace CCompilerNet.Parser
         private bool CompileMinMaxOp(ASTNode parent)
         {
             ASTNode minMaxOp = new ASTNode("minMaxOp");
-
-            /*if (_currentToken.Value != ":>:" && _currentToken.Value != ":<:")
-            {
-                return false;
-            }*/
 
             if (!IsValueEquals(":>:") && !IsValueEquals(":<:"))
             {
@@ -953,7 +860,6 @@ namespace CCompilerNet.Parser
             EatToken(); //move over to next token 
 
             parent.Add(minMaxOp); //add node to parent
-
             return true;
         }
 
@@ -975,9 +881,9 @@ namespace CCompilerNet.Parser
             }
 
             parent.Add(sumExp);
-
             return true;
         }
+
         private bool CompileSumExpTag(ASTNode parent)
         {
             ASTNode sumExpTag = new ASTNode("sumExpressionTag");
@@ -1000,7 +906,6 @@ namespace CCompilerNet.Parser
 
             sumExpTag.Children.Reverse();
             parent.Add(sumExpTag);
-
             return true;
         }
 
@@ -1008,11 +913,6 @@ namespace CCompilerNet.Parser
         private bool CompileSumOp(ASTNode parent)
         {
             ASTNode sumOp = new ASTNode("operator");
-
-            /*if (_currentToken.Value != "+" && _currentToken.Value != "-")
-            {
-                return false;
-            }*/
 
             if (!IsValueEquals("+") && !IsValueEquals("-"))
             {
@@ -1024,7 +924,6 @@ namespace CCompilerNet.Parser
             EatToken();
 
             parent.Add(sumOp);
-
             return true;
         }
 
@@ -1048,6 +947,7 @@ namespace CCompilerNet.Parser
             parent.Add(mulExp);
             return true;
         }
+
         private bool CompileMulExpTag(ASTNode parent)
         {
             ASTNode mulExpTag = new ASTNode("mulExpressionTag");
@@ -1078,11 +978,6 @@ namespace CCompilerNet.Parser
         {
             ASTNode mulOp = new ASTNode("operator");
 
-            /*if (_currentToken.Value != "*" && _currentToken.Value != "/" && _currentToken.Value != "%")
-            {
-                return false;
-            }*/
-
             if (!IsValueEquals("*") && !IsValueEquals("/") && !IsValueEquals("%"))
             {
                 return false;
@@ -1093,7 +988,6 @@ namespace CCompilerNet.Parser
             EatToken();
 
             parent.Add(mulOp);
-
             return true;
         }
 
@@ -1127,11 +1021,6 @@ namespace CCompilerNet.Parser
         private bool CompileUnaryOperator(ASTNode parent)
         {
             ASTNode unaryOp = new ASTNode("unaryOperator");
-
-            /*if (_currentToken.Value != "-" && _currentToken.Value != "*" && _currentToken.Value != "?")
-            {
-                return false;
-            }*/
 
             if (!IsValueEquals("-") && !IsValueEquals("*") && !IsValueEquals("?"))
             {
@@ -1200,7 +1089,6 @@ namespace CCompilerNet.Parser
                 return true;
             }
 
-
             return false;
         }
 
@@ -1216,8 +1104,6 @@ namespace CCompilerNet.Parser
 
             mutable.Add(new ASTNode(_currentToken));
 
-
-
             if (_lexer.Peek(1).Value != "[")
             {
                 parent.Add(mutable);
@@ -1229,12 +1115,10 @@ namespace CCompilerNet.Parser
 
             mutable.Add(new ASTNode(new Token(TokenType.SpecialSymbol, "[")));
 
-
             if (!CompileExp(mutable))  //must be an expression between the []
             {
                 return false;
             }
-
 
             if (!IsValueEquals("]"))
             {
@@ -1244,7 +1128,6 @@ namespace CCompilerNet.Parser
             mutable.Add(new ASTNode(new Token(TokenType.SpecialSymbol, "]")));
 
             parent.Add(mutable);
-
             return true;
         }
 
@@ -1281,9 +1164,7 @@ namespace CCompilerNet.Parser
             EatToken();
 
             parent.Add(call);
-
             return true;
-
         }
 
         //args -> argList | epsilon
@@ -1310,7 +1191,6 @@ namespace CCompilerNet.Parser
             if (!CompileExp(argList))
             {
                 return false;
-                
             }
 
             if (!CompileArgListTag(argList))
@@ -1321,6 +1201,7 @@ namespace CCompilerNet.Parser
             parent.Add(argList);
             return true;
         }
+
         private bool CompileArgListTag(ASTNode parent)
         {
             ASTNode argListTag = new ASTNode("argListTag");
@@ -1362,7 +1243,6 @@ namespace CCompilerNet.Parser
             EatToken();
 
             parent.Add(constant);
-
             return true;
         }
 
@@ -1407,8 +1287,6 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
-            //codeWriteExp(expStmt.Children[0]);
-
             if (!IsValueEquals(";"))
             {
                 ErrorHandler.UnexpectedTokenError(";", _currentToken);
@@ -1417,7 +1295,7 @@ namespace CCompilerNet.Parser
 
             if (write)
             {
-                _vm.CodeWriteExp(expStmt.Children[0]);
+                VM.CodeWriteExp(expStmt.Children[0]);
             }
 
             EatToken();
@@ -1439,7 +1317,7 @@ namespace CCompilerNet.Parser
 
             if (write)
             {
-                _vm.SymbolTable = _vm.SymbolTable.StartSubRoutine();
+                VM.SymbolTable = VM.SymbolTable.StartSubRoutine();
             }
 
             if (!CompileLocalDecls(compoundStmt))
@@ -1460,7 +1338,7 @@ namespace CCompilerNet.Parser
 
             if (write)
             {
-                _vm.SymbolTable = _vm.SymbolTable.GetNext();
+                VM.SymbolTable = VM.SymbolTable.GetNext();
             }
 
             EatToken();
@@ -1500,7 +1378,7 @@ namespace CCompilerNet.Parser
 
             if (!IsValueEquals("else"))
             {
-                _vm.CodeWriteSelectStmt(selectStmt);
+                VM.CodeWriteSelectStmt(selectStmt);
                 parent.Add(selectStmt);
                 return true;
             }
@@ -1512,7 +1390,7 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
-            _vm.CodeWriteSelectStmt(selectStmt);
+            VM.CodeWriteSelectStmt(selectStmt);
 
             parent.Add(selectStmt);
             return true;
@@ -1550,7 +1428,7 @@ namespace CCompilerNet.Parser
 
                 if (write)
                 {
-                    _vm.CodeWriteWhileLoop(iterStmt);
+                    VM.CodeWriteWhileLoop(iterStmt);
                 }
 
                 parent.Add(iterStmt);
@@ -1595,8 +1473,8 @@ namespace CCompilerNet.Parser
                 iterStmt.Add(new ASTNode(_currentToken));
                 EatToken();
 
-                _vm.SymbolTable = _vm.SymbolTable.StartSubRoutine();
-                _vm.SymbolTable.Define(iterStmt.Children[1].Token.Value, "int", Kind.LOCAL, _vm.GetLocalBuilder("int"));
+                VM.SymbolTable = VM.SymbolTable.StartSubRoutine();
+                VM.SymbolTable.Define(iterStmt.Children[1].Token.Value, "int", Kind.LOCAL, VM.GetLocalBuilder("int"));
 
                 if (!CompileStmt(iterStmt, false))
                 {
@@ -1605,10 +1483,10 @@ namespace CCompilerNet.Parser
 
                 if (write)
                 {
-                    _vm.CodeWriteForLoop(iterStmt);
+                    VM.CodeWriteForLoop(iterStmt);
                 }
 
-                _vm.SymbolTable = _vm.SymbolTable.GetNext();
+                VM.SymbolTable = VM.SymbolTable.GetNext();
 
                 parent.Add(iterStmt);
                 return true;
@@ -1688,14 +1566,14 @@ namespace CCompilerNet.Parser
 
                 if (write)
                 {
-                    _vm.CodeWriteReturnStmt(returnStmt);
+                    VM.CodeWriteReturnStmt(returnStmt);
                 }
                 parent.Add(returnStmt);
                 return true;
             }
 
             EatToken();
-            _vm.CodeWriteReturnStmt(returnStmt);
+            VM.CodeWriteReturnStmt(returnStmt);
             parent.Add(returnStmt);
             return true;
         }
@@ -1751,37 +1629,6 @@ namespace CCompilerNet.Parser
             }
 
             return true;
-        }
-
-        #endregion
-
-        #region Helpers
-
-        public static void AddSymbolsFromScopedVarDecl(ASTNode root, SymbolTable st)
-        {
-            string type = "";
-            // starting as local kind
-            Kind attribute = Kind.LOCAL;
-            // points to the varDeclInit in children
-            // depends on the number of children, assuming the number is 2 at the beginning
-            int startIndex = 1;
-
-            // if there is an attribute, the count of children will be 3 (static, typeSpec varDeclList)
-            if (root.Children.Count > 2)
-            {
-                // changing the start index to 2 because the number of children is 3
-                startIndex = 2;
-                // changing the attribute to be static
-                attribute = Kind.STATIC;
-            }
-
-            type = root.Children[startIndex - 1].Token.Value;
-
-            // iterating through the IDs and adding them to the symbol table
-            foreach (ASTNode child in root.Children[startIndex].Children)
-            {
-                st.Define(child.Children[0].Token.Value, type, attribute);
-            }
         }
 
         #endregion
