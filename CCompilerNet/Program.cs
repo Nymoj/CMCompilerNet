@@ -25,14 +25,14 @@ namespace CCompilerNet
                     output = args[i].Replace("-output=", "");
                 }
 
-                if (args[i].Contains(".c"))
+                if (args[i].Contains(".cm"))
                 {
                     path = args[i];
                 }
 
             }
 
-            output = output == "" ? path.Replace(".c", ".exe") : output;   //if output is empty save the .exe file at the same path as the .c file
+            output = output == "" ? path.Replace(".cm", ".exe") : output;   //if output is empty save the .exe file at the same path as the .c file
 
             StreamWriter outputFile = new StreamWriter("output.xml");
             Parser.Parser parser = new Parser.Parser(args[0], Path.GetFileName(output));
@@ -40,10 +40,10 @@ namespace CCompilerNet
 
             AST ast = parser._ast;
             parser._vm.Save(Path.GetFileName(output));
-            File.Delete(output);
             File.Move(Path.GetFileName(output), output);
             outputFile.Write(ast?.ToString());
-            outputFile.Close(); 
+            outputFile.Close();
+            Console.WriteLine("File Compiled Succesfuly and saved at {0}", Path.GetFullPath(output));
         }
     }
 }
