@@ -10,7 +10,7 @@ The grammar is taken from here: http://marvin.cs.uidaho.edu/Teaching/CS445/c-Gra
 In order to compile a C- program run the compiler from the command line and pass it the path to the .cm file as an argument.  
 The result (.exe file) will be saved in the same directory as the source file.
 
-If you want to save the result in a different location user the outputflag in the following structure:  
+If you want to save the result in a different location use the output flag in the following structure:  
 **-output=<filename/path>.exe**
 
 ### Side comments
