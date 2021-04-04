@@ -206,9 +206,27 @@ namespace CCompilerNet.CodeGen
                 case "compoundStmt":
                     CodeWriteCompoundStmt(root.Children[0]);
                     break;
+                case "iterStmt":
+                    CodeWriteIterStmt(root.Children[0]);
+                    break;
             }
         }
+        public void CodeWriteIterStmt(ASTNode root)
+        {
+            if (root.Children[0].Token.Value == "for")
+            {
+                SymbolTable = SymbolTable.StartSubRoutine();
+                SymbolTable.Define(root.Children[1].Token.Value, "int", Kind.LOCAL, GetLocalBuilder("int"));
+                CodeWriteForLoop(root);
+                SymbolTable = SymbolTable.GetNext();
 
+            }
+            else
+            {
+                CodeWriteWhileLoop(root);
+            }
+            
+        }
         public void CodeWriteCompoundStmt(ASTNode root)
         {
             SymbolTable = SymbolTable.StartSubRoutine();
