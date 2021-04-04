@@ -201,7 +201,7 @@ namespace CCompilerNet.CodeGen
                     CodeWriteSelectStmt(root.Children[0]);
                     break;
                 case "expStmt":
-                    CodeWriteExp(root.Children[0]);
+                    CodeWriteExp(root.Children[0].Children[0]);
                     break;
                 case "compoundStmt":
                     CodeWriteCompoundStmt(root.Children[0]);
