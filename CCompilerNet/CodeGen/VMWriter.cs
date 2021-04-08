@@ -650,7 +650,7 @@ namespace CCompilerNet.CodeGen
                     ErrorHandler.FunctionIsNotDeclaredError(exp.Children[0].Token.Value);
                 }
 
-                if (func.ParmTypeList != null) //checks if argument list is empty
+                if (func.ParmTypeList != null && func.ParmTypeList.Count > 0) //checks if argument list is empty
                 {
                     num = exp.Children[1].Children[0].Children.Count;
 
