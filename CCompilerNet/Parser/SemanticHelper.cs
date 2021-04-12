@@ -81,9 +81,22 @@ namespace CCompilerNet.Parser
             // iterating through parmTypeLists
             foreach (ASTNode child in parmList.Children[0].Children)
             {
-                for (int i = 0; i < child.Children[1].Children.Count; i++)
+                /*for (int i = 0; i < child.Children[1].Children.Count; i++)
                 {
                     result.Add(child.Children[0].Token.Value + " arr");
+                }*/
+                string type = child.Children[0].Token.Value;
+
+                foreach(ASTNode parmId in child.Children[1].Children)
+                {
+                    if (parmId.Children.Count > 0)
+                    {
+                        result.Add(child.Children[0].Token.Value + " arr");
+                    }
+                    else
+                    {
+                        result.Add(child.Children[0].Token.Value);
+                    }
                 }
             }
 

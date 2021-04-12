@@ -53,6 +53,11 @@ namespace CCompilerNet.CodeGen
             FunctionTable = new FunctionTable(_typeBuilder);
         }
 
+        public ILGenerator GetCurrentILGenerator()
+        {
+            return _currILGen;
+        }
+
         private void Push(char value, bool isGlobal = false)
         {
             (isGlobal ? _cctorIL : _currILGen).Emit(OpCodes.Ldc_I4, value);
@@ -142,6 +147,26 @@ namespace CCompilerNet.CodeGen
         public void CodeWriteFunction(ASTNode root)
         {
             string id = SemanticHelper.GetFunctionId(root);
+            FunctionSymbol symbol = FunctionTable.GetFunctionSymbol(id);
+
+            if (_currILGen != null)
+            {
+                // returning default value if no return specified
+                switch(FunctionTable.GetFunctionSymbol(FunctionTable.GetLastId()).Type)
+                {
+                    case "int":
+                        Push(0);
+                        break;
+                    case "char":
+                        Push('.');
+                        break;
+                    case "bool":
+                        Push(0);
+                        break;
+                }
+
+                _currILGen.Emit(OpCodes.Ret);
+            }
 
             _methodBuilder = FunctionTable.GetFunctionSymbol(id).MethodBuilder;
             _currILGen = _methodBuilder.GetILGenerator();
@@ -151,6 +176,21 @@ namespace CCompilerNet.CodeGen
         {
             if (FunctionTable.FunctionSymbolExists("main"))
             {
+                // returning default value if no return specified
+                switch (FunctionTable.GetFunctionSymbol("main").Type)
+                {
+                    case "int":
+                        Push(0);
+                        break;
+                    case "char":
+                        Push('.');
+                        break;
+                    case "bool":
+                        Push(0);
+                        break;
+                }
+
+                _currILGen.Emit(OpCodes.Ret);
                 _asmBuilder.SetEntryPoint(FunctionTable.GetFunctionSymbol("main").MethodBuilder, PEFileKinds.ConsoleApplication);
             }
             else
@@ -201,7 +241,11 @@ namespace CCompilerNet.CodeGen
                     CodeWriteSelectStmt(root.Children[0]);
                     break;
                 case "expStmt":
-                    CodeWriteExp(root.Children[0].Children[0]);
+                    string type = CodeWriteExp(root.Children[0].Children[0]);
+                    if (!type.Contains("expression"))
+                    {
+                        _currILGen.Emit(OpCodes.Pop);
+                    }
                     break;
                 case "compoundStmt":
                     CodeWriteCompoundStmt(root.Children[0]);
@@ -272,6 +316,7 @@ namespace CCompilerNet.CodeGen
 
                 // translating the statements inside the if
                 CodeWriteStmt(root.Children[1]);
+
                 // finishing the if statement
                 _currILGen.Emit(OpCodes.Br, toEnd);
 
@@ -283,7 +328,6 @@ namespace CCompilerNet.CodeGen
             // without else
             else
             {
-                
                 CodeWriteSimpleExp(root.Children[0]);
                 Label toEnd = _currILGen.DefineLabel();
                 _currILGen.Emit(OpCodes.Brfalse, toEnd);
@@ -386,7 +430,8 @@ namespace CCompilerNet.CodeGen
                 _currILGen.Emit(OpCodes.Stelem, ConvertToType(arr1.Type, false)); //pop into 1st array at index i
             }
 
-            return arr1.Type;
+            //return arr1.Type;
+            return "expression";
         }
 
         public string CodeWriteExp(ASTNode exp)
@@ -398,11 +443,6 @@ namespace CCompilerNet.CodeGen
                 {
                     Symbol symbol = SymbolTable.GetSymbol(GetID(exp.Children[0]));
                     string type;
-
-                    if (symbol == null)
-                    {
-                        ErrorHandler.VariableIsNotDeclaredError(exp.Children[0].Token.Value);
-                    }
 
                     // possibly will be removed
                     // the condition is checked in the parser
@@ -433,7 +473,7 @@ namespace CCompilerNet.CodeGen
                         _currILGen.Emit(OpCodes.Pop);
                     }
 
-                    if (type != symbol.Type)
+                    if (!type.Contains(symbol.Type))
                     {
                         ErrorHandler.Error("Error: type missmatch");
                     }
@@ -512,7 +552,7 @@ namespace CCompilerNet.CodeGen
                         }
                     }
 
-                    return type;
+                    return "expression";
                 }
                 else
                 {
@@ -563,7 +603,7 @@ namespace CCompilerNet.CodeGen
                         _currILGen.Emit(opCode, symbol.Index);
                     }
 
-                    return "int";
+                    return "expression";
                 }
             }
 
@@ -633,7 +673,7 @@ namespace CCompilerNet.CodeGen
                             ErrorHandler.Error("print function requires arguments");
                         }
                         CodeWritePrint(exp.Children[1].Children[0]);
-                        return "null";
+                        return "expression";
                     }
 
                     if (exp.Children[0].Token.Value == "put")
@@ -644,7 +684,7 @@ namespace CCompilerNet.CodeGen
                         }
 
                         CodeWritePut(exp.Children[1].Children[0]);
-                        return null;
+                        return "expression";
                     }
 
                     ErrorHandler.FunctionIsNotDeclaredError(exp.Children[0].Token.Value);
@@ -662,7 +702,7 @@ namespace CCompilerNet.CodeGen
 
                     for (int i = 0; i < num; i++)
                     {
-                        if (CodeWriteSimpleExp(exp.Children[1].Children[0].Children[i], isGlobal) != func.ParmTypeList[i])
+                        if (!CodeWriteSimpleExp(exp.Children[1].Children[0].Children[i], isGlobal).Contains(func.ParmTypeList[i]))
                         {
                             ErrorHandler.Error("Error: parameter type missmatch");
                         }
@@ -737,7 +777,7 @@ namespace CCompilerNet.CodeGen
 
                     for (int i = 1; i < exp.Children.Count; i++)
                     {
-                        if (type != CodeWriteSimpleExp(exp.Children[i], isGlobal))
+                        if (!CodeWriteSimpleExp(exp.Children[i], isGlobal).Contains(type))
                         {
                             ErrorHandler.Error("type missmatch");
                         }
@@ -753,7 +793,7 @@ namespace CCompilerNet.CodeGen
 
                     for (int i = 1; i < exp.Children.Count; i++)
                     {
-                        if (type != CodeWriteSimpleExp(exp.Children[i], isGlobal))
+                        if (!CodeWriteSimpleExp(exp.Children[i], isGlobal).Contains(type))
                         {
                             ErrorHandler.Error("type missmatch");
                         }
@@ -809,7 +849,7 @@ namespace CCompilerNet.CodeGen
                 {
                     string type = CodeWriteSimpleExp(exp.Children[0], isGlobal);    //push 1st exp
 
-                    if (!CodeWriteTag(exp.Children[1], type, isGlobal))  //code generation of tag
+                    if (!CodeWriteTag(exp.Children[1], type.Replace("call ", ""), isGlobal))  //code generation of tag
                     {
                         ErrorHandler.Error("type missmatch");
                     }
@@ -825,7 +865,7 @@ namespace CCompilerNet.CodeGen
                         // ? only works with ints
                         string check = CodeWriteSimpleExp(exp.Children[0], isGlobal);
 
-                        if (check != "int")
+                        if (!check.Contains("int"))
                         {
                             ErrorHandler.Error("type missmatch");
                         }
@@ -935,7 +975,7 @@ namespace CCompilerNet.CodeGen
                 {
                     currType = CodeWriteExp(child);
 
-                    if (currType != "operator" && type != currType)
+                    if (currType != "operator" && !currType.Contains(type))
                     {
                         return false;
                     }
@@ -961,7 +1001,7 @@ namespace CCompilerNet.CodeGen
                     _currILGen.Emit(OpCodes.Ldloc, symbol.LocalBuilder.LocalIndex);
                     _currILGen.Emit(OpCodes.Ldc_I4, i);
                     string type = CodeWriteSimpleExp(exp);
-                    if (symbol.Type != type)
+                    if (!type.Contains(symbol.Type))
                     {
                         ErrorHandler.Error("type missmatch");
                     }
@@ -972,7 +1012,7 @@ namespace CCompilerNet.CodeGen
             {
                 string type = CodeWriteSimpleExp(exp);
 
-                if (symbol.Type != type)
+                if (!type.Contains(symbol.Type))
                 {
                     ErrorHandler.Error("type missmatch");
                 }
@@ -997,7 +1037,7 @@ namespace CCompilerNet.CodeGen
                     _cctorIL.Emit(OpCodes.Ldsfld, symbol.FieldBuilder);
                     _cctorIL.Emit(OpCodes.Ldc_I4, i);
                     string type = CodeWriteSimpleExp(exp, true);
-                    if (symbol.Type != type)
+                    if (!type.Contains(symbol.Type))
                     {
                         ErrorHandler.Error("type missmatch");
                     }
@@ -1008,7 +1048,7 @@ namespace CCompilerNet.CodeGen
             {
                 string type = CodeWriteSimpleExp(exp, true);
 
-                if (symbol.Type != type)
+                if (!type.Contains(symbol.Type))
                 {
                     ErrorHandler.Error("type missmatch");
                 }

@@ -13,17 +13,25 @@ namespace CCompilerNet.Parser
         // ID : FunctionSymbol
         private Dictionary<string, FunctionSymbol> _fs;
         private TypeBuilder _typeBuilder;
+        private List<string> _lastIds;
 
         public FunctionTable(TypeBuilder typeBuilder)
         {
             _fs = new Dictionary<string, FunctionSymbol>();
             _typeBuilder = typeBuilder;
+            _lastIds = new List<string>();
+        }
+
+        public string GetLastId()
+        {
+            return _lastIds.Count >= 2 ? _lastIds[_lastIds.Count - 2] : "";
         }
 
         public void Define(ASTNode root)
         {
             string type = SemanticHelper.GetFunctionType(root);
             string id = SemanticHelper.GetFunctionId(root);
+            _lastIds.Add(id);
             List<string> parmTypeList = SemanticHelper.GetFunctionParmTypes(root);
             List<string> clearParmTypeList = new List<string>(parmTypeList);
 

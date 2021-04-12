@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using CCompilerNet.CodeGen;
@@ -1295,7 +1296,11 @@ namespace CCompilerNet.Parser
 
             if (write)
             {
-                VM.CodeWriteExp(expStmt.Children[0]);
+                string type = VM.CodeWriteExp(expStmt.Children[0]);
+                if (!type.Contains("expression"))
+                {
+                    VM.GetCurrentILGenerator().Emit(OpCodes.Pop);
+                }
             }
 
             EatToken();
