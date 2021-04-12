@@ -241,10 +241,17 @@ namespace CCompilerNet.CodeGen
                     CodeWriteSelectStmt(root.Children[0]);
                     break;
                 case "expStmt":
-                    string type = CodeWriteExp(root.Children[0].Children[0]);
-                    if (!type.Contains("expression"))
+                    string id = GetID(root.Children[0]);
+                    FunctionSymbol symbol = FunctionTable.GetFunctionSymbol(id);
+
+                    if (root.Children[0].Children[0].Children.Count > 1 || symbol != null)
                     {
-                        _currILGen.Emit(OpCodes.Pop);
+                        string type = CodeWriteExp(root.Children[0].Children[0]);
+
+                        if (!type.Contains("expression") && symbol.Type != "void")
+                        {
+                            GetCurrentILGenerator().Emit(OpCodes.Pop);
+                        }
                     }
                     break;
                 case "compoundStmt":
@@ -269,7 +276,6 @@ namespace CCompilerNet.CodeGen
             {
                 CodeWriteWhileLoop(root);
             }
-            
         }
         public void CodeWriteCompoundStmt(ASTNode root)
         {
@@ -622,6 +628,7 @@ namespace CCompilerNet.CodeGen
                 {
                     if (value.Contains('"'))
                     {
+                        // removing " from token value (string literals come with ")
                         value = value.Replace("\"", "");
                         PushString(value, isGlobal);
                         return "string";
@@ -666,28 +673,28 @@ namespace CCompilerNet.CodeGen
 
                 if (func == null)
                 {
-                    if (exp.Children[0].Token.Value == "print")
-                    {
-                        if (exp.Children.Count < 2)
-                        {
-                            ErrorHandler.Error("print function requires arguments");
-                        }
-                        CodeWritePrint(exp.Children[1].Children[0]);
-                        return "expression";
-                    }
-
-                    if (exp.Children[0].Token.Value == "put")
-                    {
-                        if (exp.Children.Count < 2)
-                        {
-                            ErrorHandler.Error("put function requires arguments");
-                        }
-
-                        CodeWritePut(exp.Children[1].Children[0]);
-                        return "expression";
-                    }
-
                     ErrorHandler.FunctionIsNotDeclaredError(exp.Children[0].Token.Value);
+                }
+                
+                if (exp.Children[0].Token.Value == "print")
+                {
+                    if (exp.Children.Count < 2)
+                    {
+                        ErrorHandler.Error("print function requires arguments");
+                    }
+                    CodeWritePrint(exp.Children[1].Children[0]);
+                    return "expression";
+                }
+
+                if (exp.Children[0].Token.Value == "put")
+                {
+                    if (exp.Children.Count < 2)
+                    {
+                        ErrorHandler.Error("put function requires arguments");
+                    }
+
+                    CodeWritePut(exp.Children[1].Children[0]);
+                    return "expression";
                 }
 
                 if (func.ParmTypeList != null && func.ParmTypeList.Count > 0) //checks if argument list is empty
@@ -934,6 +941,10 @@ namespace CCompilerNet.CodeGen
 
                     case Kind.ARG:
                        _currILGen.Emit(OpCodes.Starg, symbol.Index);
+                        break;
+
+                    case Kind.GLOBAL:
+                        _currILGen.Emit(OpCodes.Stsfld, symbol.FieldBuilder);
                         break;
                 }
             }
@@ -1207,6 +1218,11 @@ namespace CCompilerNet.CodeGen
         public string GetID(ASTNode root)
         {
             if (root.Tag == "mutable")
+            {
+                return root.Children[0].Token.Value;
+            }
+
+            if (root.Tag == "call")
             {
                 return root.Children[0].Token.Value;
             }

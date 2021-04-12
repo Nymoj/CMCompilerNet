@@ -1,12 +1,4 @@
-int foo()
-{
-	int a : 10;
-	print(a);
-}
-
 main()
 {
-	10 + 1;
-	
-	return;
+	print("\n");
 }

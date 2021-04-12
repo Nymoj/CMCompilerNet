@@ -11,17 +11,10 @@ namespace CCompilerNet.Parser
 {
     public class Parser
     {
-        private string _filePath;
         private Lexer _lexer;
         private Token _currentToken;
         public AST _ast { get; private set; }
         public VMWriter VM { get; }
-
-        public Parser(Parser other)
-        {
-            _currentToken = new Token(other._currentToken.Type, other._currentToken.Value);
-            _filePath = other._filePath;
-        }
 
         public Parser(string filePath, string fileName)
         {
@@ -1294,10 +1287,14 @@ namespace CCompilerNet.Parser
                 return false;
             }
 
-            if (write)
+            string id = VM.GetID(expStmt.Children[0]);
+            FunctionSymbol symbol = VM.FunctionTable.GetFunctionSymbol(id);
+
+            if (write && (expStmt.Children[0].Children.Count > 1 || symbol != null))
             {
                 string type = VM.CodeWriteExp(expStmt.Children[0]);
-                if (!type.Contains("expression"))
+                
+                if (!type.Contains("expression") && symbol.Type != "void")
                 {
                     VM.GetCurrentILGenerator().Emit(OpCodes.Pop);
                 }

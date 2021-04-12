@@ -20,6 +20,10 @@ namespace CCompilerNet.Parser
             _fs = new Dictionary<string, FunctionSymbol>();
             _typeBuilder = typeBuilder;
             _lastIds = new List<string>();
+
+            // putting default functions: print and put
+            _fs.Add("print", new FunctionSymbol(null, "void", null));
+            _fs.Add("put", new FunctionSymbol(null, "void", null));
         }
 
         public string GetLastId()
@@ -31,6 +35,13 @@ namespace CCompilerNet.Parser
         {
             string type = SemanticHelper.GetFunctionType(root);
             string id = SemanticHelper.GetFunctionId(root);
+
+            if (FunctionSymbolExists(id))
+            {
+                ErrorHandler.Error($"{id}, a function with the same name already exists");
+                return;
+            }
+
             _lastIds.Add(id);
             List<string> parmTypeList = SemanticHelper.GetFunctionParmTypes(root);
             List<string> clearParmTypeList = new List<string>(parmTypeList);
@@ -63,7 +74,7 @@ namespace CCompilerNet.Parser
 
         public bool FunctionSymbolExists(string name)
         {
-            return _fs.ContainsKey(name);
+            return name != null && _fs.ContainsKey(name);
         }
     }
 }
