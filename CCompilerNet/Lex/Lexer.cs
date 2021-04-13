@@ -82,6 +82,7 @@ namespace CCompilerNet
             else if (IsStringLiteral())
             {
                 token = new Token(TokenType.StringLiteral, CutTokenFromLine(startPos));
+                token.Value = token.Value.Replace("\\n", "\n");
             }
             else if (IsSpecialSymbol())
             {

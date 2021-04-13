@@ -970,7 +970,7 @@ namespace CCompilerNet.CodeGen
                 }
             }
 
-            _currILGen.Emit(OpCodes.Call, typeof(Console).GetMethod("WriteLine", types.ToArray()));
+            _currILGen.Emit(OpCodes.Call, typeof(Console).GetMethod("Write", types.ToArray()));
         }
 
         public bool CodeWriteTag(ASTNode exp, string type, bool isGlobal)
