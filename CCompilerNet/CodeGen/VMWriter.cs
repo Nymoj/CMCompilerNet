@@ -933,19 +933,40 @@ namespace CCompilerNet.CodeGen
                         break;
                 }
 
-                switch (symbol.Kind)
+                if (symbol.IsArray)
                 {
-                    case Kind.LOCAL:
-                       _currILGen.Emit(OpCodes.Stloc, symbol.Index);
-                        break;   
+                    switch (symbol.Kind)
+                    {
+                        case Kind.LOCAL:
+                            _currILGen.Emit(OpCodes.Ldloc, symbol.Index);
+                            break;
 
-                    case Kind.ARG:
-                       _currILGen.Emit(OpCodes.Starg, symbol.Index);
-                        break;
+                        case Kind.ARG:
+                            _currILGen.Emit(OpCodes.Ldarg, symbol.Index);
+                            break;
 
-                    case Kind.GLOBAL:
-                        _currILGen.Emit(OpCodes.Stsfld, symbol.FieldBuilder);
-                        break;
+                        case Kind.GLOBAL:
+                            _currILGen.Emit(OpCodes.Ldsfld, symbol.FieldBuilder);
+                            break;
+                    }
+
+                }
+                else
+                {
+                    switch (symbol.Kind)
+                    {
+                        case Kind.LOCAL:
+                            _currILGen.Emit(OpCodes.Stloc, symbol.Index);
+                            break;
+
+                        case Kind.ARG:
+                            _currILGen.Emit(OpCodes.Starg, symbol.Index);
+                            break;
+
+                        case Kind.GLOBAL:
+                            _currILGen.Emit(OpCodes.Stsfld, symbol.FieldBuilder);
+                            break;
+                    }
                 }
             }
         }
